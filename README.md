@@ -86,7 +86,18 @@ OPENAI_API_KEY=
 
 ## 🤝 Contributing
 
-This is a personal project, but feedback is welcome! Open an issue to suggest improvements.
+**Feedback welcome!** Feel free to:
+
+- ✅ Open issues with suggestions or architecture ideas
+- ✅ Point out bugs or potential improvements
+- ✅ Ask questions about the implementation
+
+**Not accepting:**
+
+- ❌ Pull requests with code implementations
+- ❌ Direct code contributions
+
+If you're interested in similar features, feel free to fork this repo and experiment!
 
 ## 📄 License
 
