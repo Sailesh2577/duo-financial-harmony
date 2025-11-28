@@ -72,6 +72,14 @@ duo-financial-harmony/
 └── public/               # Static assets
 ```
 
+## 🌐 Live Deployment
+
+**Production URL:** https://duo-financial-harmony.vercel.app
+
+The app is deployed on Vercel with automatic deployments on every push to `main` branch.
+
+**Test Supabase Connection:** https://duo-financial-harmony.vercel.app/test-supabase
+
 ## 🔐 Environment Variables
 
 Required environment variables (see `.env.example`):
@@ -105,4 +113,6 @@ MIT License - see LICENSE file for details
 
 ---
 
-**Status:** 🚧 In Active Development (Phase 0)
+**Status:** 🚧 In Active Development (Phase 1)
+
+- [x] **Phase 0:** Foundation (Nov 25 - Dec 1) - Setup & Deploy ✅
