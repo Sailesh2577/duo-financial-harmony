@@ -313,6 +313,41 @@ USING (
 
 ---
 
+## Helper Functions
+
+### get_my_household_id()
+
+A security definer function that safely retrieves the current user's household_id without triggering RLS recursion.
+
+**Why It Exists:**
+RLS policies that query the `users` table to check `household_id` would cause infinite recursion. This function bypasses RLS safely.
+
+```sql
+CREATE OR REPLACE FUNCTION public.get_my_household_id()
+RETURNS UUID
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT household_id FROM public.users WHERE id = auth.uid()
+$$;
+```
+
+**Usage in Policies:**
+
+```sql
+-- Instead of this (causes recursion):
+USING (household_id IN (SELECT household_id FROM users WHERE id = auth.uid()))
+
+-- Use this:
+USING (household_id = public.get_my_household_id())
+```
+
+**Security:** Safe because it only returns YOUR household_id (uses `auth.uid()` which can't be spoofed).
+
+---
+
 ## Performance Indexes
 
 Indexes speed up common queries by 100x.
