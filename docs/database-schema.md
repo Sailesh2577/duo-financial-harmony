@@ -304,6 +304,28 @@ USING (
 | goals        | ✅ Household      | ✅ Household       | ✅ Household     | ✅ Household |
 | categories   | ✅ Global + own   | ✅ Authenticated   | ✅ Own           | ✅ Own       |
 
+### Special Case: Household Creation (The "Chicken-and-Egg" Fix)
+
+The `SELECT` policy for the **households** table differs slightly from others to handle onboarding.
+
+**The Problem:**
+
+1. User creates a household (`INSERT`).
+2. App tries to return the new row (`SELECT`).
+3. Standard policy checks `get_my_household_id()`.
+4. User's profile hasn't been linked to the household yet (that happens next), so the check fails and the `INSERT` appears to return NULL.
+
+**The Solution:**
+The `households` SELECT policy allows access if you belong to the household **OR** if you are the creator.
+
+````sql
+-- households SELECT policy
+USING (
+  id = get_my_household_id() -- Normal access
+  OR
+  created_by = auth.uid()    -- Access immediately after creation
+);
+
 **Key Security Features:**
 
 - ✅ Can't see other households' data
@@ -332,7 +354,7 @@ SET search_path = public
 AS $$
   SELECT household_id FROM public.users WHERE id = auth.uid()
 $$;
-```
+````
 
 **Usage in Policies:**
 

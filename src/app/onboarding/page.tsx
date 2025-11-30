@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/components/logout-button";
+import CreateHouseholdForm from "./create-household-form";
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -12,6 +13,16 @@ export default async function OnboardingPage() {
     redirect("/login");
   }
 
+  // Get user's name for personalized greeting
+  const { data: profile } = await supabase
+    .from("users")
+    .select("full_name")
+    .eq("id", user.id)
+    .single();
+
+  const displayName =
+    profile?.full_name || user.email?.split("@")[0] || "there";
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-8">
       {/* Logout button in top right */}
@@ -19,31 +30,52 @@ export default async function OnboardingPage() {
         <LogoutButton />
       </div>
 
-      <div className="w-full max-w-md space-y-6 text-center">
-        <div className="text-6xl">👋</div>
-        <h1 className="text-3xl font-bold">Welcome to Duo!</h1>
+      <div className="w-full max-w-md space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <div className="text-6xl mb-4">👋</div>
+          <h1 className="text-3xl font-bold">Welcome, {displayName}!</h1>
+          <p className="text-gray-600 mt-2">
+            Let&apos;s set up your household to start tracking finances
+            together.
+          </p>
+        </div>
 
-        <p className="text-gray-600 dark:text-gray-400">
-          Let&apos;s get you set up. You can either create a new household or
-          join an existing one.
-        </p>
-
-        <div className="space-y-3 pt-4">
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-            <p className="font-medium">🏠 Create Household</p>
-            <p className="text-sm text-gray-500">Coming in Issue #8</p>
+        {/* Create Household Section */}
+        <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">🏠</span>
+            <h2 className="text-xl font-semibold">Create a Household</h2>
           </div>
+          <p className="text-gray-600 text-sm mb-4">
+            Start fresh and invite your partner to join.
+          </p>
+          <CreateHouseholdForm />
+        </div>
 
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-            <p className="font-medium">🔗 Join with Invite Code</p>
-            <p className="text-sm text-gray-500">Coming in Issue #9</p>
+        {/* Divider */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-200" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-gray-50 text-slate-500">or</span>
           </div>
         </div>
 
-        <p className="text-center text-green-600 dark:text-green-400 text-sm pt-4">
-          ✅ Middleware working! You&apos;re here because you don&apos;t have a
-          household yet.
-        </p>
+        {/* Join Household Section */}
+        <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm opacity-60">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">🔗</span>
+            <h2 className="text-xl font-semibold">Join with Invite Code</h2>
+          </div>
+          <p className="text-gray-600 text-sm mb-4">
+            Have an invite code from your partner? Enter it here.
+          </p>
+          <div className="text-center py-4 text-slate-500 text-sm">
+            Coming in Issue #9
+          </div>
+        </div>
       </div>
     </div>
   );
