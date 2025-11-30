@@ -318,13 +318,14 @@ The `SELECT` policy for the **households** table differs slightly from others to
 **The Solution:**
 The `households` SELECT policy allows access if you belong to the household **OR** if you are the creator.
 
-````sql
+```sql
 -- households SELECT policy
 USING (
   id = get_my_household_id() -- Normal access
   OR
   created_by = auth.uid()    -- Access immediately after creation
 );
+```
 
 **Key Security Features:**
 
@@ -354,7 +355,7 @@ SET search_path = public
 AS $$
   SELECT household_id FROM public.users WHERE id = auth.uid()
 $$;
-````
+```
 
 **Usage in Policies:**
 
