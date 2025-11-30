@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo");
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
@@ -59,7 +61,7 @@ export default function LoginPage() {
       }
 
       // Success - redirect to dashboard (middleware will handle onboarding check later)
-      router.push("/dashboard");
+      router.push(redirectTo || "/dashboard");
       router.refresh();
     } catch {
       setServerError("An unexpected error occurred. Please try again.");

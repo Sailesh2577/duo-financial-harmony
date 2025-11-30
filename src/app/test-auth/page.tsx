@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import LogoutButton from "./logout-button";
+import LogoutButton from "@/components/logout-button";
 
 export default async function TestAuthPage() {
   const supabase = await createClient();
