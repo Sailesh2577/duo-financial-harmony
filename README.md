@@ -78,8 +78,6 @@ duo-financial-harmony/
 
 The app is deployed on Vercel with automatic deployments on every push to `main` branch.
 
-**Test Supabase Connection:** https://duo-financial-harmony.vercel.app/test-supabase
-
 ## 🔐 Environment Variables
 
 Required environment variables (see `.env.example`):
