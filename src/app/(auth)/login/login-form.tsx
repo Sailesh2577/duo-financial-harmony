@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
+import { joinHousehold } from "@/lib/actions/household";
 
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo");
+  const inviteCode = searchParams.get("invite");
 
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
@@ -60,6 +62,23 @@ export default function LoginForm() {
         return;
       }
 
+      // If there's an invite code, try to join the household
+      if (inviteCode) {
+        const joinResult = await joinHousehold(inviteCode);
+        if (joinResult?.error) {
+          console.log("Failed to auto-join household:", joinResult.error);
+          router.push("/dashboard");
+          router.refresh();
+          return;
+        }
+        if (joinResult?.success) {
+          router.push("/dashboard?welcome=joined");
+          router.refresh();
+          return;
+        }
+      }
+
+      // No invite code - redirect to intended destination or dashboard
       router.push(redirectTo || "/dashboard");
       router.refresh();
     } catch {
@@ -74,6 +93,12 @@ export default function LoginForm() {
       <h2 className="text-2xl font-semibold text-center text-slate-900 mb-6">
         Welcome back
       </h2>
+
+      {inviteCode && (
+        <div className="bg-blue-50 text-blue-700 text-sm p-3 rounded-md mb-4 text-center">
+          🏠 Log in to join a household
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {serverError && (
@@ -141,14 +166,20 @@ export default function LoginForm() {
           disabled={isLoading}
           className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          {isLoading ? "Logging in..." : "Log in"}
+          {isLoading
+            ? inviteCode
+              ? "Logging in & joining..."
+              : "Logging in..."
+            : inviteCode
+            ? "Log in & Join Household"
+            : "Log in"}
         </button>
       </form>
 
       <p className="text-center text-sm text-slate-600 mt-6">
         Don&apos;t have an account?{" "}
         <Link
-          href="/signup"
+          href={inviteCode ? `/signup?invite=${inviteCode}` : "/signup"}
           className="text-blue-600 hover:underline font-medium"
         >
           Sign up

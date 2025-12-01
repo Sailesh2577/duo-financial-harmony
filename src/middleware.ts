@@ -31,8 +31,20 @@ function isPublicRoute(pathname: string): boolean {
   return false;
 }
 
+function isServerAction(request: NextRequest): boolean {
+  // Server actions have the "Next-Action" header
+  return request.headers.has("Next-Action");
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // IMPORTANT: Let server actions through without redirect
+  // Server actions are POST requests with "Next-Action" header
+  if (isServerAction(request)) {
+    const { supabaseResponse } = await updateSession(request);
+    return supabaseResponse;
+  }
 
   // Update session and get user + household status
   const { user, hasHousehold, supabaseResponse } = await updateSession(request);
