@@ -1,6 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/components/logout-button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -39,60 +46,90 @@ export default async function DashboardPage() {
   const partnerCount = (members?.length || 1) - 1;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold">
-              {household?.name || "Dashboard"}
-            </h1>
-            <p className="text-sm text-slate-500">
-              {partnerCount === 0
-                ? "Waiting for your partner to join"
-                : `${members?.length} members`}
-            </p>
+    <div className="min-h-screen bg-slate-50">
+      {/* Header with Navigation */}
+      <header className="bg-white border-b border-slate-200">
+        <div className="max-w-4xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">
+                {household?.name || "Dashboard"}
+              </h1>
+              <p className="text-sm text-slate-500">
+                {partnerCount === 0
+                  ? "Waiting for your partner to join"
+                  : `${members?.length} members`}
+              </p>
+            </div>
+            <LogoutButton />
           </div>
-          <LogoutButton />
+
+          {/* Navigation Menu */}
+          <nav className="flex gap-6 mt-4 border-t border-slate-100 pt-4">
+            <a
+              href="/dashboard"
+              className="text-sm font-medium text-blue-600 border-b-2 border-blue-600 pb-1"
+            >
+              Dashboard
+            </a>
+            <span className="text-sm text-slate-400 cursor-not-allowed">
+              Transactions
+            </span>
+            <span className="text-sm text-slate-400 cursor-not-allowed">
+              Goals
+            </span>
+            <span className="text-sm text-slate-400 cursor-not-allowed">
+              Settings
+            </span>
+          </nav>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Welcome Card */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
-          <h2 className="text-lg font-semibold mb-2">
-            Welcome, {profile.full_name || user.email}! 🎉
-          </h2>
-          <p className="text-slate-600">
-            Your household is set up and ready to go.
-          </p>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Welcome, {profile.full_name || user.email}! 🎉
+            </CardTitle>
+            <CardDescription>
+              Your household is set up and ready to go.
+            </CardDescription>
+          </CardHeader>
+        </Card>
 
         {/* Invite Partner Card - Only show if no partner yet */}
         {partnerCount === 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="font-semibold text-blue-900 mb-2">
-              📨 Invite Your Partner
-            </h3>
-            <p className="text-blue-800 text-sm mb-4">
-              Share this code with your partner so they can join your household:
-            </p>
-            <div className="bg-white border border-blue-300 rounded-md p-4 text-center">
-              <p className="text-2xl font-mono font-bold tracking-wider text-blue-600">
-                {household?.invite_code}
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="text-blue-900">
+                📨 Invite Your Partner
+              </CardTitle>
+              <CardDescription className="text-blue-800">
+                Share this code with your partner so they can join your
+                household:
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-white border border-blue-300 rounded-md p-4 text-center">
+                <p className="text-2xl font-mono font-bold tracking-wider text-blue-600">
+                  {household?.invite_code}
+                </p>
+              </div>
+              <p className="text-xs text-blue-700 mt-3 text-center">
+                They can enter this code at signup or on the join page
               </p>
-            </div>
-            <p className="text-xs text-blue-700 mt-3 text-center">
-              They can enter this code at signup or on the join page
-            </p>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Household Members */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
-          <h3 className="font-semibold mb-4">Household Members</h3>
-          <div className="space-y-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Household Members</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             {members?.map((member) => (
               <div
                 key={member.id}
@@ -104,7 +141,7 @@ export default async function DashboardPage() {
                   </span>
                 </div>
                 <div>
-                  <p className="font-medium">
+                  <p className="font-medium text-slate-900">
                     {member.full_name || "No name set"}
                     {member.id === user.id && (
                       <span className="text-xs text-slate-500 ml-2">(You)</span>
@@ -114,14 +151,21 @@ export default async function DashboardPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Placeholder for future features */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6 text-center text-slate-500">
-          <p className="text-4xl mb-2">📊</p>
-          <p>Transaction feed and spending summaries coming in Phase 3!</p>
-        </div>
+        {/* Transactions Empty State */}
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-4xl mb-3">💰</p>
+            <h3 className="font-semibold text-slate-900 mb-1">
+              No transactions yet
+            </h3>
+            <p className="text-sm text-slate-500">
+              Connect your bank account in Phase 2 to see your spending here.
+            </p>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
