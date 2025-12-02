@@ -254,6 +254,12 @@ is_completed: FALSE
 │   goals     │
 │  household_id────►households.id
 └─────────────┘
+
+┌───────────────┐
+│linked_accounts│
+│         user_id────►user.id
+│    household_id────►households.id
+└───────────────┘
 ```
 
 **Cascade Rules:**
@@ -261,6 +267,59 @@ is_completed: FALSE
 - Delete household → Deletes transactions, goals, unlinks users
 - Delete user → Deletes their transactions, nullifies household.created_by
 - Delete category → Nullifies transactions.category_id (doesn't delete transactions)
+
+---
+
+### 6. linked_accounts
+
+Stores Plaid-linked bank accounts for each household.
+
+| Column               | Type        | Constraints                   | Description                            |
+| -------------------- | ----------- | ----------------------------- | -------------------------------------- |
+| `id`                 | UUID        | PRIMARY KEY                   | Unique linked account ID               |
+| `user_id`            | UUID        | NOT NULL, FK → users(id)      | Who linked this account                |
+| `household_id`       | UUID        | NOT NULL, FK → households(id) | Which household this belongs to        |
+| `plaid_access_token` | TEXT        | NOT NULL                      | Plaid access token (sensitive!)        |
+| `plaid_item_id`      | TEXT        | UNIQUE, NOT NULL              | Plaid's item identifier                |
+| `institution_name`   | TEXT        | NULL                          | Bank name (e.g., "Chase")              |
+| `account_name`       | TEXT        | NULL                          | Account display name                   |
+| `account_mask`       | TEXT        | NULL                          | Last 4 digits (e.g., "1234")           |
+| `account_type`       | TEXT        | NULL                          | Type: checking, savings, credit, etc.  |
+| `status`             | TEXT        | DEFAULT 'active', CHECK       | Status: active, error, reauth_required |
+| `error_code`         | TEXT        | NULL                          | Plaid error code if status is error    |
+| `last_synced_at`     | TIMESTAMPTZ | NULL                          | When transactions were last fetched    |
+| `created_at`         | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()       | When account was linked                |
+| `updated_at`         | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()       | Last modification timestamp            |
+
+**Notes:**
+
+- `plaid_access_token` is sensitive - never expose to frontend
+- `plaid_item_id` is unique to prevent duplicate connections
+- `status` helps track connection health (for re-authentication flows)
+- One user can link multiple accounts
+- Both partners can see all household linked accounts
+
+**Check Constraint:**
+
+```sql
+CHECK (status IN ('active', 'error', 'reauth_required'))
+```
+
+**Example Data:**
+
+```
+id: ghi789...
+user_id: 123e4567... (Sailesh)
+household_id: 550e8400...
+plaid_access_token: access-sandbox-abc123...
+plaid_item_id: item-sandbox-xyz789...
+institution_name: "Chase"
+account_name: "Chase Checking"
+account_mask: "4521"
+account_type: "checking"
+status: "active"
+last_synced_at: 2025-12-01T10:30:00Z
+```
 
 ---
 

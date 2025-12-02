@@ -24,5 +24,13 @@ export type TransactionUpdate =
   Database["public"]["Tables"]["transactions"]["Update"];
 export type GoalUpdate = Database["public"]["Tables"]["goals"]["Update"];
 
+// Linked Accounts types
+export type LinkedAccount =
+  Database["public"]["Tables"]["linked_accounts"]["Row"];
+export type LinkedAccountInsert =
+  Database["public"]["Tables"]["linked_accounts"]["Insert"];
+export type LinkedAccountUpdate =
+  Database["public"]["Tables"]["linked_accounts"]["Update"];
+
 // Re-export the Database type
 export type { Database };

@@ -156,6 +156,72 @@ export type Database = {
           },
         ]
       }
+      linked_accounts: {
+        Row: {
+          account_mask: string | null
+          account_name: string | null
+          account_type: string | null
+          created_at: string
+          error_code: string | null
+          household_id: string
+          id: string
+          institution_name: string | null
+          last_synced_at: string | null
+          plaid_access_token: string
+          plaid_item_id: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_mask?: string | null
+          account_name?: string | null
+          account_type?: string | null
+          created_at?: string
+          error_code?: string | null
+          household_id: string
+          id?: string
+          institution_name?: string | null
+          last_synced_at?: string | null
+          plaid_access_token: string
+          plaid_item_id: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_mask?: string | null
+          account_name?: string | null
+          account_type?: string | null
+          created_at?: string
+          error_code?: string | null
+          household_id?: string
+          id?: string
+          institution_name?: string | null
+          last_synced_at?: string | null
+          plaid_access_token?: string
+          plaid_item_id?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linked_accounts_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "linked_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -275,7 +341,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_my_household_id: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
