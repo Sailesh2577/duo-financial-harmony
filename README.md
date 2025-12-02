@@ -78,6 +78,25 @@ duo-financial-harmony/
 
 The app is deployed on Vercel with automatic deployments on every push to `main` branch.
 
+## Plaid Configuration
+
+This app uses Plaid for bank account integration.
+
+### Environment Variables Required:
+
+- `PLAID_CLIENT_ID` - Your Plaid client ID
+- `PLAID_SECRET` - Your Plaid secret (use sandbox secret for development)
+- `PLAID_ENV` - Environment: `sandbox`, `development`, or `production`
+
+### Sandbox Testing:
+
+In sandbox mode, use these test credentials when linking a bank:
+
+- **Username:** `user_good`
+- **Password:** `pass_good`
+
+This will simulate a successful bank connection with sample transactions.
+
 ## 🔐 Environment Variables
 
 Required environment variables (see `.env.example`):
@@ -88,6 +107,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 PLAID_CLIENT_ID=
 PLAID_SECRET=
+PLAID_ENV=
 OPENAI_API_KEY=
 ```
 
