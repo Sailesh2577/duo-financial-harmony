@@ -355,13 +355,14 @@ USING (
 
 ### Policy Coverage
 
-| Table        | SELECT            | INSERT             | UPDATE           | DELETE       |
-| ------------ | ----------------- | ------------------ | ---------------- | ------------ |
-| households   | ✅ Own            | ✅ Self as creator | ✅ Own           | ✅ Own       |
-| users        | ✅ Self + partner | ✅ Self            | ✅ Self          | ✅ Self      |
-| transactions | ✅ All household  | ✅ Self            | ✅ All household | ✅ Own only  |
-| goals        | ✅ Household      | ✅ Household       | ✅ Household     | ✅ Household |
-| categories   | ✅ Global + own   | ✅ Authenticated   | ✅ Own           | ✅ Own       |
+| Table           | SELECT            | INSERT             | UPDATE           | DELETE       |
+| --------------- | ----------------- | ------------------ | ---------------- | ------------ |
+| households      | ✅ Own            | ✅ Self as creator | ✅ Own           | ✅ Own       |
+| users           | ✅ Self + partner | ✅ Self            | ✅ Self          | ✅ Self      |
+| transactions    | ✅ All household  | ✅ Self            | ✅ All household | ✅ Own only  |
+| goals           | ✅ Household      | ✅ Household       | ✅ Household     | ✅ Household |
+| categories      | ✅ Global + own   | ✅ Authenticated   | ✅ Own           | ✅ Own       |
+| linked_accounts | ✅ Household      | ✅ Self            | ✅ Household     | ✅ Own only  |
 
 ### Special Case: Household Creation (The "Chicken-and-Egg" Fix)
 
