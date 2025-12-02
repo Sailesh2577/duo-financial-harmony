@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import LogoutButton from "@/components/logout-button";
+import { PlaidLinkButton } from "@/components/plaid-link-button";
+import { LinkedAccountsList } from "@/components/linked-accounts-list";
 import {
   Card,
   CardContent,
@@ -43,7 +45,15 @@ export default async function DashboardPage() {
     .select("id, full_name, email")
     .eq("household_id", profile.household_id);
 
+  // Get linked bank accounts for this household
+  const { data: linkedAccounts } = await supabase
+    .from("linked_accounts")
+    .select("*")
+    .eq("household_id", profile.household_id)
+    .order("created_at", { ascending: false });
+
   const partnerCount = (members?.length || 1) - 1;
+  const hasLinkedAccounts = linkedAccounts && linkedAccounts.length > 0;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -124,6 +134,28 @@ export default async function DashboardPage() {
           </Card>
         )}
 
+        {/* Bank Connection Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>🏦 Bank Connection</CardTitle>
+            <CardDescription>
+              {hasLinkedAccounts
+                ? "Manage your connected bank accounts"
+                : "Link your bank account to automatically import transactions"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <PlaidLinkButton />
+
+            {/* Show linked accounts if any */}
+            {hasLinkedAccounts && (
+              <div className="pt-4 border-t">
+                <LinkedAccountsList accounts={linkedAccounts} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Household Members */}
         <Card>
           <CardHeader>
@@ -154,7 +186,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Transactions Empty State */}
+        {/* Transactions Section */}
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-4xl mb-3">💰</p>
@@ -162,7 +194,9 @@ export default async function DashboardPage() {
               No transactions yet
             </h3>
             <p className="text-sm text-slate-500">
-              Connect your bank account in Phase 2 to see your spending here.
+              {hasLinkedAccounts
+                ? "Sync your bank to import transactions (coming in Issue #13)"
+                : "Connect your bank account above to see your spending here"}
             </p>
           </CardContent>
         </Card>
