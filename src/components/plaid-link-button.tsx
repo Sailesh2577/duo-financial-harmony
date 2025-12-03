@@ -102,8 +102,8 @@ export function PlaidLinkButton({ onSuccess }: PlaidLinkButtonProps) {
 
   return (
     <div>
-      <Button onClick={handleClick} disabled={isLoading} className="w-full">
-        {isLoading ? "Connecting..." : "🏦 Link Bank Account"}
+      <Button onClick={handleClick} disabled={isLoading} size="sm">
+        {isLoading ? "Connecting..." : "➕ Link Bank"}
       </Button>
       {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
     </div>

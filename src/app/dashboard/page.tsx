@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import LogoutButton from "@/components/logout-button";
 import { PlaidLinkButton } from "@/components/plaid-link-button";
 import { LinkedAccountsList } from "@/components/linked-accounts-list";
+import { SyncTransactionsButton } from "@/components/sync-transactions-button";
+import { TransactionsList } from "@/components/transactions-list";
 import {
   Card,
   CardContent,
@@ -51,6 +53,15 @@ export default async function DashboardPage() {
     .select("*")
     .eq("household_id", profile.household_id)
     .order("created_at", { ascending: false });
+
+  // Get transactions for this household
+  const { data: transactions } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("household_id", profile.household_id)
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   const partnerCount = (members?.length || 1) - 1;
   const hasLinkedAccounts = linkedAccounts && linkedAccounts.length > 0;
@@ -145,7 +156,11 @@ export default async function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <PlaidLinkButton />
+            {/* Buttons Row */}
+            <div className="flex gap-3">
+              <PlaidLinkButton />
+              {hasLinkedAccounts && <SyncTransactionsButton />}
+            </div>
 
             {/* Show linked accounts if any */}
             {hasLinkedAccounts && (
@@ -188,16 +203,16 @@ export default async function DashboardPage() {
 
         {/* Transactions Section */}
         <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-4xl mb-3">💰</p>
-            <h3 className="font-semibold text-slate-900 mb-1">
-              No transactions yet
-            </h3>
-            <p className="text-sm text-slate-500">
-              {hasLinkedAccounts
-                ? "Sync your bank to import transactions (coming in Issue #13)"
-                : "Connect your bank account above to see your spending here"}
-            </p>
+          <CardHeader>
+            <CardTitle>Recent Transactions</CardTitle>
+            <CardDescription>
+              {transactions && transactions.length > 0
+                ? `Showing ${transactions.length} recent transactions`
+                : "Your spending will appear here"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TransactionsList transactions={transactions || []} />
           </CardContent>
         </Card>
       </main>
