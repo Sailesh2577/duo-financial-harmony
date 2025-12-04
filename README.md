@@ -10,7 +10,7 @@ Eliminate the "financial blindness" newlyweds face by creating a single, emotion
 
 - **Frontend:** Next.js 15, TypeScript, Tailwind CSS, Shadcn UI
 - **Backend:** Supabase (PostgreSQL + Auth + Realtime)
-- **AI:** OpenAI GPT-4o-mini (Transaction categorization)
+- **AI:** Google Gemini 2.0 Flash (Transaction categorization)
 - **Banking:** Plaid API (Sandbox for MVP)
 - **Deployment:** Vercel
 - **Analytics:** PostHog
@@ -22,7 +22,7 @@ Eliminate the "financial blindness" newlyweds face by creating a single, emotion
 - Node.js 18+ installed
 - Supabase account (free tier)
 - Plaid developer account (sandbox mode)
-- OpenAI API key
+- GEMINI API key
 
 ### Installation
 
@@ -108,7 +108,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 PLAID_CLIENT_ID=
 PLAID_SECRET=
 PLAID_ENV=
-OPENAI_API_KEY=
+GEMINI_API_KEY=
 ```
 
 ## 🤝 Contributing
