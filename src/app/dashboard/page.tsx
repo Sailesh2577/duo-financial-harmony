@@ -6,6 +6,7 @@ import { LinkedAccountsList } from "@/components/linked-accounts-list";
 import { SyncTransactionsButton } from "@/components/sync-transactions-button";
 import { TransactionsList } from "@/components/transactions-list";
 import { AddTransactionButton } from "@/components/add-transaction-button";
+import { SpendingSummaryCards } from "@/components/spending-summary-cards";
 import {
   Card,
   CardContent,
@@ -64,6 +65,34 @@ export default async function DashboardPage() {
     .order("created_at", { ascending: false })
     .limit(50);
 
+  // Calculate spending summaries for current month
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+  const startOfMonthStr = startOfMonth.toISOString().split("T")[0];
+
+  // Get current month's transactions for calculations
+  const { data: monthlyTransactions } = await supabase
+    .from("transactions")
+    .select("amount, user_id, is_joint")
+    .eq("household_id", profile.household_id)
+    .gte("date", startOfMonthStr);
+
+  // Calculate spending totals
+  const mySpending = (monthlyTransactions || [])
+    .filter((t) => t.user_id === user.id && !t.is_joint)
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const partnerSpending = (monthlyTransactions || [])
+    .filter((t) => t.user_id !== user.id && !t.is_joint)
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const jointSpending = (monthlyTransactions || [])
+    .filter((t) => t.is_joint)
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  // Get partner info
+  const partner = members?.find((m) => m.id !== user.id);
   const partnerCount = (members?.length || 1) - 1;
   const hasLinkedAccounts = linkedAccounts && linkedAccounts.length > 0;
 
@@ -109,17 +138,14 @@ export default async function DashboardPage() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto p-6 space-y-6">
-        {/* Welcome Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Welcome, {profile.full_name || user.email}! 🎉
-            </CardTitle>
-            <CardDescription>
-              Your household is set up and ready to go.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        {/* Spending Summary Cards */}
+        <SpendingSummaryCards
+          mySpending={mySpending}
+          partnerSpending={partnerSpending}
+          jointSpending={jointSpending}
+          partnerName={partner?.full_name || null}
+          hasPartner={partnerCount > 0}
+        />
 
         {/* Invite Partner Card - Only show if no partner yet */}
         {partnerCount === 0 && (
