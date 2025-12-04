@@ -5,6 +5,7 @@ import { PlaidLinkButton } from "@/components/plaid-link-button";
 import { LinkedAccountsList } from "@/components/linked-accounts-list";
 import { SyncTransactionsButton } from "@/components/sync-transactions-button";
 import { TransactionsList } from "@/components/transactions-list";
+import { AddTransactionButton } from "@/components/add-transaction-button";
 import {
   Card,
   CardContent,
@@ -216,6 +217,9 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Floating Action Button for Adding Transactions */}
+      <AddTransactionButton />
     </div>
   );
 }
