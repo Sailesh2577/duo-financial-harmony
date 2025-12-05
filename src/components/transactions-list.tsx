@@ -22,9 +22,10 @@ const getCategoryStyle = (categoryName: string) => {
     travel: { bg: "bg-amber-100", text: "text-amber-700", emoji: "✈️" },
     "personal care": { bg: "bg-lime-100", text: "text-lime-700", emoji: "💇" },
     other: { bg: "bg-slate-100", text: "text-slate-700", emoji: "📦" },
+    uncategorized: { bg: "bg-gray-100", text: "text-gray-500", emoji: "❓" },
   };
 
-  return styles[categoryName.toLowerCase()] || styles.other;
+  return styles[categoryName.toLowerCase()] || styles.uncategorized; // CHANGE fallback
 };
 
 export function TransactionsList({
@@ -102,8 +103,11 @@ export function TransactionsList({
                 const category = txn.category_id
                   ? categoryMap.get(txn.category_id)
                   : null;
-                const categoryName = category?.name || "Other";
-                const categoryStyle = getCategoryStyle(categoryName);
+                // Show "Uncategorized" if no category assigned, otherwise show category name
+                const categoryName = category?.name || "Uncategorized";
+                const categoryStyle = getCategoryStyle(
+                  category?.name || "uncategorized"
+                );
 
                 return (
                   <div
