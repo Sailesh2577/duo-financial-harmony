@@ -7,9 +7,15 @@ import { LinkedAccount } from "@/types";
 
 interface LinkedAccountsListProps {
   accounts: LinkedAccount[];
+  currentUserId: string;
+  householdMembers: { id: string; full_name: string | null }[];
 }
 
-export function LinkedAccountsList({ accounts }: LinkedAccountsListProps) {
+export function LinkedAccountsList({
+  accounts,
+  currentUserId,
+  householdMembers,
+}: LinkedAccountsListProps) {
   const [unlinkingId, setUnlinkingId] = useState<string | null>(null);
   const router = useRouter();
 
@@ -17,10 +23,18 @@ export function LinkedAccountsList({ accounts }: LinkedAccountsListProps) {
     return null;
   }
 
-  const handleUnlink = async (accountId: string) => {
+  const getOwnerName = (userId: string) => {
+    if (userId === currentUserId) return "You";
+    const member = householdMembers.find((m) => m.id === userId);
+    return member?.full_name || "Partner";
+  };
+
+  const isOwnAccount = (userId: string) => userId === currentUserId;
+
+  const handleUnlink = async (accountId: string, accountName: string) => {
     if (
       !confirm(
-        "Are you sure you want to unlink this account? This will not delete your transaction history."
+        `Are you sure you want to unlink ${accountName}? This will not delete your transaction history.`
       )
     ) {
       return;
@@ -35,14 +49,20 @@ export function LinkedAccountsList({ accounts }: LinkedAccountsListProps) {
         body: JSON.stringify({ accountId }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to unlink");
+        throw new Error(data.error || "Failed to unlink");
       }
 
       router.refresh();
     } catch (error) {
       console.error("Unlink error:", error);
-      alert("Failed to unlink account. Please try again.");
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to unlink account. Please try again."
+      );
     } finally {
       setUnlinkingId(null);
     }
@@ -74,9 +94,21 @@ export function LinkedAccountsList({ accounts }: LinkedAccountsListProps) {
               <span className="text-lg">🏦</span>
             </div>
             <div>
-              <p className="font-medium text-slate-900">
-                {account.institution_name}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="font-medium text-slate-900">
+                  {account.institution_name}
+                </p>
+                {/* Ownership badge */}
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded ${
+                    isOwnAccount(account.user_id)
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-purple-100 text-purple-700"
+                  }`}
+                >
+                  {getOwnerName(account.user_id)}
+                </span>
+              </div>
               <p className="text-sm text-slate-500">
                 {account.account_name || account.account_type || "Account"}
                 {account.account_mask && ` ••••${account.account_mask}`}
@@ -102,15 +134,26 @@ export function LinkedAccountsList({ accounts }: LinkedAccountsListProps) {
                 </p>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleUnlink(account.id)}
-              disabled={unlinkingId === account.id}
-              className="text-slate-400 hover:text-red-500 text-xs"
-            >
-              {unlinkingId === account.id ? "..." : "✕"}
-            </Button>
+            {/* Only show unlink button for own accounts */}
+            {isOwnAccount(account.user_id) ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  handleUnlink(
+                    account.id,
+                    account.institution_name || "this account"
+                  )
+                }
+                disabled={unlinkingId === account.id}
+                className="text-slate-400 hover:text-red-500 text-xs"
+              >
+                {unlinkingId === account.id ? "..." : "✕"}
+              </Button>
+            ) : (
+              // Empty space to maintain alignment, or show a tooltip
+              <div className="w-8" />
+            )}
           </div>
         </div>
       ))}

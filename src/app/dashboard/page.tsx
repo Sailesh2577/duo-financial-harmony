@@ -192,7 +192,11 @@ export default async function DashboardPage() {
             {/* Show linked accounts if any */}
             {hasLinkedAccounts && (
               <div className="pt-4 border-t">
-                <LinkedAccountsList accounts={linkedAccounts} />
+                <LinkedAccountsList
+                  accounts={linkedAccounts}
+                  currentUserId={user.id}
+                  householdMembers={members || []}
+                />
               </div>
             )}
           </CardContent>

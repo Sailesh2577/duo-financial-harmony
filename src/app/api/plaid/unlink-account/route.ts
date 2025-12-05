@@ -20,19 +20,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing accountId" }, { status: 400 });
     }
 
-    // Get the linked account
+    // First, check if the account exists in the household
     const { data: account, error: fetchError } = await supabase
       .from("linked_accounts")
-      .select("*")
+      .select("*, users!inner(full_name)")
       .eq("id", accountId)
-      .eq("user_id", user.id) // Ensure user owns this account
       .single();
 
     if (fetchError || !account) {
       return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
-    // Remove from Plaid (optional but good practice)
+    // Check if the current user owns this account
+    if (account.user_id !== user.id) {
+      const ownerName = account.users?.full_name || "your partner";
+      return NextResponse.json(
+        {
+          error: `This account was linked by ${ownerName}. Only they can unlink it.`,
+          code: "NOT_OWNER",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Remove from Plaid
     try {
       await plaidClient.itemRemove({
         access_token: account.plaid_access_token,
@@ -50,7 +61,7 @@ export async function POST(request: Request) {
 
     if (deleteError) {
       return NextResponse.json(
-        { error: "Failed to unlink account" },
+        { error: "Failed to unlink account. Please try again." },
         { status: 500 }
       );
     }
@@ -59,7 +70,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error unlinking account:", error);
     return NextResponse.json(
-      { error: "Failed to unlink account" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }
