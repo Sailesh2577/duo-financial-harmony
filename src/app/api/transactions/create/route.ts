@@ -31,7 +31,15 @@ export async function POST(request: NextRequest) {
 
     // Parse the request body
     const body = await request.json();
-    const { amount, merchantName, categoryId, date, description } = body;
+    const { amount, merchantName, categoryId, date, description, isJoint } =
+      body as {
+        amount: number;
+        merchantName: string;
+        categoryId?: string;
+        date: string;
+        description?: string;
+        isJoint?: boolean;
+      };
 
     // Validate required fields
     if (!amount || amount <= 0) {
@@ -58,12 +66,12 @@ export async function POST(request: NextRequest) {
       .insert({
         household_id: profile.household_id,
         user_id: user.id,
-        amount: parseFloat(amount),
+        amount: typeof amount === "string" ? parseFloat(amount) : amount,
         date: date,
         description: description || merchantName,
         merchant_name: merchantName.trim(),
         category_id: categoryId || null,
-        is_joint: false,
+        is_joint: isJoint || false, // Use the passed value, default to false
         is_hidden: false,
         source: "manual",
       })

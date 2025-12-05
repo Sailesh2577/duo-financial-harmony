@@ -42,6 +42,8 @@ export function AddTransactionButton() {
   const [merchantName, setMerchantName] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  // 1. Added State for Joint/Personal toggle
+  const [isJoint, setIsJoint] = useState(false);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -70,6 +72,7 @@ export function AddTransactionButton() {
     setMerchantName("");
     setCategoryId("");
     setDate(new Date().toISOString().split("T")[0]);
+    setIsJoint(false); // Reset toggle
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -101,12 +104,14 @@ export function AddTransactionButton() {
         headers: {
           "Content-Type": "application/json",
         },
+        // 2. Updated API call to include isJoint
         body: JSON.stringify({
           amount: parseFloat(amount),
           merchantName: merchantName.trim(),
           categoryId: categoryId || null,
           date,
           description: merchantName.trim(),
+          isJoint,
         }),
       });
 
@@ -213,6 +218,35 @@ export function AddTransactionButton() {
                 onChange={(e) => setDate(e.target.value)}
                 required
               />
+            </div>
+
+            {/* 3. Added Joint/Personal Toggle UI */}
+            <div className="space-y-2">
+              <Label>Type</Label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsJoint(false)}
+                  className={`flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-colors ${
+                    !isJoint
+                      ? "bg-slate-100 border-slate-300 text-slate-900"
+                      : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                  }`}
+                >
+                  👤 Personal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsJoint(true)}
+                  className={`flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-colors ${
+                    isJoint
+                      ? "bg-purple-100 border-purple-300 text-purple-900"
+                      : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                  }`}
+                >
+                  👥 Joint
+                </button>
+              </div>
             </div>
           </div>
           <DialogFooter>
