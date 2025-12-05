@@ -65,6 +65,12 @@ export default async function DashboardPage() {
     .order("created_at", { ascending: false })
     .limit(50);
 
+  // Get categories for transaction display
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("*")
+    .or(`is_default.eq.true,household_id.eq.${profile.household_id}`);
+
   // Calculate spending summaries for current month
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
@@ -243,7 +249,10 @@ export default async function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <TransactionsList transactions={transactions || []} />
+            <TransactionsList
+              transactions={transactions || []}
+              categories={categories || []}
+            />
           </CardContent>
         </Card>
       </main>

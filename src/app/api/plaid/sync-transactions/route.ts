@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { plaidClient } from "@/lib/plaid";
+import { categorizeTransactionsBatch } from "@/lib/gemini";
 
 export async function POST() {
   try {
@@ -52,6 +53,7 @@ export async function POST() {
 
     let totalTransactions = 0;
     let newTransactions = 0;
+    const newTransactionIds: string[] = []; // Track new transaction IDs for categorization
 
     // 5. Fetch transactions for each linked account
     for (const account of linkedAccounts) {
@@ -80,8 +82,8 @@ export async function POST() {
             continue;
           }
 
-          // Insert new transaction
-          const { error: insertError } = await supabase
+          // Insert new transaction (without category - will be categorized by AI)
+          const { data: insertedTxn, error: insertError } = await supabase
             .from("transactions")
             .insert({
               household_id: userProfile.household_id,
@@ -91,14 +93,18 @@ export async function POST() {
               amount: Math.abs(txn.amount), // Plaid uses negative for debits
               date: txn.date,
               description: txn.name,
-              merchant_name: txn.merchant_name || txn.name,
+              merchant_name: txn.merchant_name || txn.name, // Will be cleaned by AI
               is_joint: false, // Default to personal
               is_hidden: false,
               source: "plaid",
-            });
+              // category_id is intentionally left null - AI will set it
+            })
+            .select("id, description, amount")
+            .single();
 
-          if (!insertError) {
+          if (!insertError && insertedTxn) {
             newTransactions++;
+            newTransactionIds.push(insertedTxn.id);
           }
         }
 
@@ -119,11 +125,77 @@ export async function POST() {
       }
     }
 
-    // 8. Return success with counts
+    // 8. Auto-categorize new transactions with AI
+    let categorizedCount = 0;
+    if (newTransactionIds.length > 0) {
+      try {
+        // Fetch the new transactions for AI processing
+        const { data: newTxns } = await supabase
+          .from("transactions")
+          .select("id, description, amount")
+          .in("id", newTransactionIds);
+
+        if (newTxns && newTxns.length > 0) {
+          // Get categories for mapping
+          const { data: categories } = await supabase
+            .from("categories")
+            .select("id, name")
+            .eq("is_default", true);
+
+          if (categories) {
+            const categoryMap = new Map<string, string>();
+            categories.forEach((cat) => {
+              categoryMap.set(cat.name.toLowerCase(), cat.id);
+            });
+
+            // Process in batches of 20 to avoid overwhelming the AI
+            const batchSize = 20;
+            for (let i = 0; i < newTxns.length; i += batchSize) {
+              const batch = newTxns.slice(i, i + batchSize);
+              const transactionsForAI = batch.map((t) => ({
+                id: t.id,
+                description: t.description,
+                amount: Number(t.amount),
+              }));
+
+              const aiResults = await categorizeTransactionsBatch(
+                transactionsForAI
+              );
+
+              // Update each transaction with AI results
+              for (const result of aiResults) {
+                const categoryId =
+                  categoryMap.get(result.category.toLowerCase()) ||
+                  categoryMap.get("other");
+
+                const { error: updateError } = await supabase
+                  .from("transactions")
+                  .update({
+                    merchant_name: result.merchantName,
+                    category_id: categoryId,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("id", result.id);
+
+                if (!updateError) {
+                  categorizedCount++;
+                }
+              }
+            }
+          }
+        }
+      } catch (aiError) {
+        console.error("AI categorization error:", aiError);
+        // Don't fail the whole sync if AI fails - transactions are still imported
+      }
+    }
+
+    // 9. Return success with counts
     return NextResponse.json({
       success: true,
       total_fetched: totalTransactions,
       new_transactions: newTransactions,
+      categorized: categorizedCount,
       accounts_synced: linkedAccounts.length,
     });
   } catch (error) {
