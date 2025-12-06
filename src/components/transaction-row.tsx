@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Transaction, Category } from "@/types";
 import { toast } from "sonner";
+import { broadcastTransactionUpdate } from "@/hooks/use-realtime-transactions";
 
 interface TransactionRowProps {
   transaction: Transaction;
@@ -40,9 +42,16 @@ const formatAmount = (amount: number) => {
 };
 
 export function TransactionRow({ transaction, category }: TransactionRowProps) {
+  const router = useRouter();
+
   // Local state for optimistic updates
   const [isJoint, setIsJoint] = useState(transaction.is_joint);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Sync local state when prop changes (e.g., after router.refresh())
+  useEffect(() => {
+    setIsJoint(transaction.is_joint);
+  }, [transaction.is_joint]);
 
   const categoryName = category?.name || "Uncategorized";
   const categoryStyle = getCategoryStyle(category?.name || "uncategorized");
@@ -70,6 +79,12 @@ export function TransactionRow({ transaction, category }: TransactionRowProps) {
       if (!response.ok) {
         throw new Error("Failed to update");
       }
+
+      // Broadcast the update to other clients
+      broadcastTransactionUpdate("UPDATE", transaction.id);
+
+      // Refresh to update spending cards (server-calculated)
+      router.refresh();
 
       // Success - show subtle feedback
       toast.success(

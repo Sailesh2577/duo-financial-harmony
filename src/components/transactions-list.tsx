@@ -94,7 +94,7 @@ export function TransactionsList({
 
                 return (
                   <TransactionRow
-                    key={txn.id}
+                    key={`${txn.id}-${txn.updated_at}`}
                     transaction={txn}
                     category={category || null}
                   />

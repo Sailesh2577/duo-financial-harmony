@@ -23,7 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/client";
+import { broadcastTransactionUpdate } from "@/hooks/use-realtime-transactions";
 
 interface Category {
   id: string;
@@ -48,10 +49,7 @@ export function AddTransactionButton() {
   // Fetch categories on mount
   useEffect(() => {
     async function fetchCategories() {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      const supabase = createClient();
 
       const { data, error } = await supabase
         .from("categories")
@@ -119,6 +117,11 @@ export function AddTransactionButton() {
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to create transaction");
+      }
+
+      // Broadcast the new transaction to other clients
+      if (data.transaction?.id) {
+        broadcastTransactionUpdate("INSERT", data.transaction.id);
       }
 
       toast.success("Transaction added successfully!");
