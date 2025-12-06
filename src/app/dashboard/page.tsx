@@ -256,6 +256,8 @@ export default async function DashboardPage() {
               <TransactionsList
                 transactions={transactions || []}
                 categories={categories || []}
+                currentUserId={user.id}
+                householdMembers={members || []}
               />
             </CardContent>
           </Card>

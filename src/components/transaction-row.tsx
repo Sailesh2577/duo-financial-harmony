@@ -9,6 +9,7 @@ import { broadcastTransactionUpdate } from "@/hooks/use-realtime-transactions";
 interface TransactionRowProps {
   transaction: Transaction;
   category: Category | null;
+  ownerName: string;
 }
 
 // Category color mapping
@@ -41,7 +42,7 @@ const formatAmount = (amount: number) => {
   }).format(amount);
 };
 
-export function TransactionRow({ transaction, category }: TransactionRowProps) {
+export function TransactionRow({ transaction, category, ownerName }: TransactionRowProps) {
   const router = useRouter();
 
   // Local state for optimistic updates
@@ -137,6 +138,10 @@ export function TransactionRow({ transaction, category }: TransactionRowProps) {
             >
               {isJoint ? "👥 Joint" : "👤 Personal"}
             </button>
+            {/* Owner Indicator */}
+            <span className="text-xs text-slate-400">
+              • {ownerName}
+            </span>
           </div>
         </div>
       </div>

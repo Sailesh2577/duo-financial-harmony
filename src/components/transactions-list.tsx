@@ -1,24 +1,49 @@
 import { Transaction, Category } from "@/types";
 import { TransactionRow } from "./transaction-row";
 
+interface HouseholdMember {
+  id: string;
+  full_name: string | null;
+  email: string;
+}
+
 interface TransactionsListProps {
   transactions: Transaction[];
-
   categories: Category[];
+  currentUserId: string;
+  householdMembers: HouseholdMember[];
 }
 
 export function TransactionsList({
   transactions,
-
   categories,
+  currentUserId,
+  householdMembers,
 }: TransactionsListProps) {
   // Create a lookup map for category IDs -> category objects
-
   const categoryMap = new Map<string, Category>();
-
   categories.forEach((cat) => {
     categoryMap.set(cat.id, cat);
   });
+
+  // Create a lookup map for member IDs -> member info
+  const memberMap = new Map<string, HouseholdMember>();
+  householdMembers.forEach((member) => {
+    memberMap.set(member.id, member);
+  });
+
+  // Helper to get owner display name
+  const getOwnerName = (userId: string): string => {
+    if (userId === currentUserId) {
+      return "You";
+    }
+    const member = memberMap.get(userId);
+    if (member?.full_name) {
+      // Return first name only for cleaner display
+      return member.full_name.split(" ")[0];
+    }
+    return member?.email?.split("@")[0] || "Unknown";
+  };
 
   if (transactions.length === 0) {
     return (
@@ -97,6 +122,7 @@ export function TransactionsList({
                     key={`${txn.id}-${txn.updated_at}`}
                     transaction={txn}
                     category={category || null}
+                    ownerName={getOwnerName(txn.user_id)}
                   />
                 );
               })}
