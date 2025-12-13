@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Users } from "lucide-react";
+import { BudgetProgress } from "@/components/budget-progress";
 
 interface SpendingSummaryCardsProps {
   mySpending: number;
@@ -7,9 +8,11 @@ interface SpendingSummaryCardsProps {
   jointSpending: number;
   partnerName: string | null;
   hasPartner: boolean;
+  // Budget data (optional)
+  totalBudget?: { limit: number; threshold: number } | null;
+  jointBudget?: { limit: number; threshold: number } | null;
 }
 
-// Helper function to format currency
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -19,9 +22,8 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-// Helper function to get current month name
 function getCurrentMonthName(): string {
-  return new Date().toLocaleString("en-US", { month: "long" });
+  return new Date().toLocaleString("default", { month: "long" });
 }
 
 export function SpendingSummaryCards({
@@ -30,68 +32,106 @@ export function SpendingSummaryCards({
   jointSpending,
   partnerName,
   hasPartner,
+  totalBudget,
+  jointBudget,
 }: SpendingSummaryCardsProps) {
-  const currentMonth = getCurrentMonthName();
+  const monthName = getCurrentMonthName();
+  const totalSpending = mySpending + partnerSpending + jointSpending;
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      {/* My Spending Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            My Spending
-          </CardTitle>
-          <User className="h-4 w-4 text-blue-600" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-blue-600">
-            {formatCurrency(mySpending)}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {currentMonth} • Personal expenses
-          </p>
-        </CardContent>
-      </Card>
+    <div className="space-y-4">
+      {/* Month indicator */}
+      <p className="text-sm text-gray-500">{monthName} spending</p>
 
-      {/* Partner Spending Card */}
-      <Card className={!hasPartner ? "opacity-50" : ""}>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            {hasPartner
-              ? `${partnerName || "Partner"}'s Spending`
-              : "Partner Spending"}
-          </CardTitle>
-          <User className="h-4 w-4 text-emerald-600" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-emerald-600">
-            {hasPartner ? formatCurrency(partnerSpending) : "—"}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {hasPartner
-              ? `${currentMonth} • Personal expenses`
-              : "Waiting for partner to join"}
-          </p>
-        </CardContent>
-      </Card>
+      {/* Cards grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* My Spending */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
+              <User className="h-4 w-4 text-blue-600" />
+              My Spending
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-blue-600">
+              {formatCurrency(mySpending)}
+            </p>
+          </CardContent>
+        </Card>
 
-      {/* Joint Spending Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Joint Spending
-          </CardTitle>
-          <Users className="h-4 w-4 text-purple-600" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-purple-600">
-            {formatCurrency(jointSpending)}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {currentMonth} • Shared expenses
-          </p>
-        </CardContent>
-      </Card>
+        {/* Partner's Spending */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
+              <User className="h-4 w-4 text-emerald-600" />
+              {hasPartner && partnerName
+                ? `${partnerName}'s Spending`
+                : "Partner's Spending"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-emerald-600">
+              {formatCurrency(partnerSpending)}
+            </p>
+            {!hasPartner && (
+              <p className="text-xs text-gray-400 mt-1">
+                Invite your partner to see their spending
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Joint Spending */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
+              <Users className="h-4 w-4 text-purple-600" />
+              Joint Spending
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-purple-600">
+              {formatCurrency(jointSpending)}
+            </p>
+            {/* Joint Budget Progress */}
+            {jointBudget && (
+              <div className="mt-3">
+                <BudgetProgress
+                  spent={jointSpending}
+                  limit={jointBudget.limit}
+                  alertThreshold={jointBudget.threshold}
+                  size="sm"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Total Budget Progress (if set) */}
+      {totalBudget && (
+        <Card className="bg-linear-to-r from-purple-50 to-blue-50">
+          <CardContent className="pt-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-gray-700">
+                Total Household Budget
+              </span>
+              <span className="text-sm text-gray-500">
+                {formatCurrency(totalSpending)} of{" "}
+                {formatCurrency(totalBudget.limit)}
+              </span>
+            </div>
+            <BudgetProgress
+              spent={totalSpending}
+              limit={totalBudget.limit}
+              alertThreshold={totalBudget.threshold}
+              showAmount={false}
+              size="lg"
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
