@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { plaidClient } from "@/lib/plaid";
 import { categorizeTransactionsBatch } from "@/lib/gemini";
+import { notifyPartnerNewTransaction } from "@/lib/web-push";
+import { checkAndNotifyBudgetAlerts } from "@/lib/budget-alerts";
 
 export async function POST() {
   try {
@@ -16,10 +18,10 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Get user's household_id
+    // 2. Get user's household_id and name
     const { data: userProfile, error: profileError } = await supabase
       .from("users")
-      .select("household_id")
+      .select("household_id, full_name")
       .eq("id", user.id)
       .single();
 
@@ -190,7 +192,34 @@ export async function POST() {
       }
     }
 
-    // 9. Return success with counts
+    // 9. Send push notification to partner if new transactions were synced
+    if (newTransactions > 0) {
+      // Get the most recent transaction for the notification
+      const { data: latestTxn } = await supabase
+        .from("transactions")
+        .select("amount, merchant_name, description")
+        .eq("household_id", userProfile.household_id)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (latestTxn) {
+        const actorName = userProfile.full_name || "Your partner";
+        notifyPartnerNewTransaction(
+          user.id,
+          actorName,
+          userProfile.household_id,
+          Number(latestTxn.amount),
+          latestTxn.merchant_name || latestTxn.description
+        ).catch(console.error);
+      }
+
+      // Check budget alerts (fire and forget)
+      checkAndNotifyBudgetAlerts(userProfile.household_id).catch(console.error);
+    }
+
+    // 10. Return success with counts
     return NextResponse.json({
       success: true,
       total_fetched: totalTransactions,

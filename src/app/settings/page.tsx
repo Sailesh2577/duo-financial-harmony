@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { BudgetSettings } from "@/components/budget-settings";
 import { HouseholdSettings } from "@/components/household-settings";
+import { NotificationSettings } from "@/components/notification-settings";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -14,10 +15,10 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  // Get user profile with household
+  // Get user profile with household and notification preferences
   const { data: userProfile } = await supabase
     .from("users")
-    .select("household_id")
+    .select("household_id, notification_prefs")
     .eq("id", user.id)
     .single();
 
@@ -79,11 +80,22 @@ export default async function SettingsPage() {
     }
   });
 
+  // Type for notification preferences
+  type NotificationPrefs = {
+    push_enabled: boolean;
+    new_transaction: boolean;
+    toggle_change: boolean;
+    budget_alert: boolean;
+  };
+
   return (
     <div className="space-y-8">
       <HouseholdSettings
         householdName={household?.name || "Your Household"}
         showSettlement={household?.show_settlement ?? true}
+      />
+      <NotificationSettings
+        initialPrefs={userProfile.notification_prefs as NotificationPrefs | null}
       />
       <BudgetSettings
         categories={categories || []}

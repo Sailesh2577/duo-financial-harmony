@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyPartnerToggleChange } from "@/lib/web-push";
+import { checkAndNotifyBudgetAlerts } from "@/lib/budget-alerts";
 
 export async function POST(request: Request) {
   try {
@@ -14,10 +16,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Get user's household_id
+    // 2. Get user's household_id and name
     const { data: userProfile, error: profileError } = await supabase
       .from("users")
-      .select("household_id")
+      .select("household_id, full_name")
       .eq("id", user.id)
       .single();
 
@@ -62,7 +64,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Return success
+    // 5. Send push notification to partner (fire and forget)
+    const actorName = userProfile.full_name || "Your partner";
+    notifyPartnerToggleChange(
+      user.id,
+      actorName,
+      userProfile.household_id,
+      Number(updatedTransaction.amount),
+      updatedTransaction.merchant_name || updatedTransaction.description,
+      isJoint
+    ).catch(console.error);
+
+    // 6. Check budget alerts (fire and forget)
+    checkAndNotifyBudgetAlerts(userProfile.household_id).catch(console.error);
+
+    // 7. Return success
     return NextResponse.json({
       success: true,
       transaction: updatedTransaction,

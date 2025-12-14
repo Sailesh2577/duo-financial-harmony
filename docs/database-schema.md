@@ -2,7 +2,7 @@
 
 ## Overview
 
-Duo uses a PostgreSQL database hosted on Supabase with 8 core tables to manage household finances. The schema implements Row Level Security (RLS) for data protection and uses triggers for automation.
+Duo uses a PostgreSQL database hosted on Supabase with 9 core tables to manage household finances. The schema implements Row Level Security (RLS) for data protection and uses triggers for automation.
 
 ## Architecture Principles
 
@@ -58,9 +58,21 @@ Extends Supabase's `auth.users` with profile data.
 | `email`        | TEXT        | NOT NULL                         | User's email address             |
 | `full_name`    | TEXT        | NULL                             | Display name                     |
 | `avatar_url`   | TEXT        | NULL                             | Profile picture URL (future use) |
-| `household_id` | UUID        | FK → households(id)              | Links to household               |
-| `created_at`   | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()          | Account creation                 |
-| `updated_at`   | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()          | Last profile update              |
+| `household_id`       | UUID        | FK → households(id)              | Links to household               |
+| `notification_prefs` | JSONB       | DEFAULT (see below)              | Push notification preferences    |
+| `created_at`         | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()          | Account creation                 |
+| `updated_at`         | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()          | Last profile update              |
+
+**Notification Preferences Default:**
+
+```json
+{
+  "push_enabled": true,
+  "new_transaction": true,
+  "toggle_change": true,
+  "budget_alert": true
+}
+```
 
 **Notes:**
 
@@ -258,7 +270,7 @@ is_completed: FALSE
 
 ┌───────────────┐
 │linked_accounts│
-│         user_id────►user.id
+│         user_id────►users.id
 │    household_id────►households.id
 └───────────────┘
 
@@ -267,6 +279,11 @@ is_completed: FALSE
 │  household_id────►households.id
 │  category_id────►categories.id (optional)
 └─────────────┘
+
+┌──────────────────┐
+│push_subscriptions│
+│          user_id────►users.id
+└──────────────────┘
 ```
 
 **Cascade Rules:**
@@ -472,6 +489,58 @@ settled_by: 123e4567... (Sailesh marked it settled)
 
 ---
 
+### 9. push_subscriptions
+
+Stores Web Push API subscriptions for push notifications.
+
+| Column       | Type        | Constraints                   | Description                              |
+| ------------ | ----------- | ----------------------------- | ---------------------------------------- |
+| `id`         | UUID        | PRIMARY KEY                   | Unique subscription ID                   |
+| `user_id`    | UUID        | NOT NULL, FK → users(id)      | Which user this subscription belongs to  |
+| `endpoint`   | TEXT        | NOT NULL                      | Push service endpoint URL (FCM, etc.)    |
+| `p256dh`     | TEXT        | NOT NULL                      | Public encryption key                    |
+| `auth`       | TEXT        | NOT NULL                      | Auth secret for encryption               |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW()                 | When subscription was created            |
+| `updated_at` | TIMESTAMPTZ | DEFAULT NOW()                 | Last update timestamp                    |
+
+**Unique Constraint:**
+
+- `(user_id, endpoint)` - Each user can have one subscription per endpoint (supports multiple devices)
+
+**Notes:**
+
+- Subscriptions are created when user enables push notifications in Settings
+- Multiple subscriptions per user are supported (desktop + mobile, multiple browsers)
+- Expired/invalid subscriptions (HTTP 410/404) are automatically cleaned up when push fails
+- `p256dh` and `auth` are used for Web Push encryption (VAPID)
+
+**Example Data:**
+
+```
+id: abc123...
+user_id: 123e4567... (Sailesh)
+endpoint: "https://fcm.googleapis.com/fcm/send/..."
+p256dh: "BNcRdreALRFX..."
+auth: "tBHItJI5svbpez..."
+```
+
+**RLS Policies:**
+
+| Operation | Policy                                      |
+| --------- | ------------------------------------------- |
+| SELECT    | Users can view their own subscriptions      |
+| INSERT    | Users can create their own subscriptions    |
+| UPDATE    | Users can update their own subscriptions    |
+| DELETE    | Users can delete their own subscriptions    |
+
+**Indexes:**
+
+| Index                              | Column(s) | Purpose                       |
+| ---------------------------------- | --------- | ----------------------------- |
+| `idx_push_subscriptions_user_id`   | user_id   | Find subscriptions by user    |
+
+---
+
 ## Row Level Security (RLS)
 
 All tables enforce RLS policies. Users can only access data from their household.
@@ -504,16 +573,17 @@ USING (
 
 ### Policy Coverage
 
-| Table           | SELECT            | INSERT             | UPDATE           | DELETE       |
-| --------------- | ----------------- | ------------------ | ---------------- | ------------ |
-| households      | ✅ Own            | ✅ Self as creator | ✅ Own           | ✅ Own       |
-| users           | ✅ Self + partner | ✅ Self            | ✅ Self          | ✅ Self      |
-| transactions    | ✅ All household  | ✅ Self            | ✅ All household | ✅ Own only  |
-| goals           | ✅ Household      | ✅ Household       | ✅ Household     | ✅ Household |
-| categories      | ✅ Global + own   | ✅ Authenticated   | ✅ Own           | ✅ Own       |
-| linked_accounts | ✅ Household      | ✅ Self            | ✅ Household     | ✅ Own only  |
-| budgets         | ✅ Household      | ✅ Household       | ✅ Household     | ✅ Household |
-| settlements     | ✅ Household      | ✅ Household       | ✅ Household     | ❌ N/A       |
+| Table              | SELECT            | INSERT             | UPDATE           | DELETE       |
+| ------------------ | ----------------- | ------------------ | ---------------- | ------------ |
+| households         | ✅ Own            | ✅ Self as creator | ✅ Own           | ✅ Own       |
+| users              | ✅ Self + partner | ✅ Self            | ✅ Self          | ✅ Self      |
+| transactions       | ✅ All household  | ✅ Self            | ✅ All household | ✅ Own only  |
+| goals              | ✅ Household      | ✅ Household       | ✅ Household     | ✅ Household |
+| categories         | ✅ Global + own   | ✅ Authenticated   | ✅ Own           | ✅ Own       |
+| linked_accounts    | ✅ Household      | ✅ Self            | ✅ Household     | ✅ Own only  |
+| budgets            | ✅ Household      | ✅ Household       | ✅ Household     | ✅ Household |
+| settlements        | ✅ Household      | ✅ Household       | ✅ Household     | ❌ N/A       |
+| push_subscriptions | ✅ Own only       | ✅ Self            | ✅ Own only      | ✅ Own only  |
 
 ### Special Case: Household Creation (The "Chicken-and-Egg" Fix)
 
@@ -595,9 +665,10 @@ Indexes speed up common queries by 100x.
 | `idx_transactions_category_id`  | transactions | category_id  | Category breakdowns        |
 | `idx_goals_household_id`        | goals        | household_id | Fetch household goals      |
 | `idx_categories_household_id`   | categories   | household_id | Custom categories lookup   |
-| `idx_budgets_household_id`      | budgets      | household_id | Find budgets by household  |
-| `idx_budgets_category_id`       | budgets      | category_id  | Find budgets by category   |
-| `idx_settlements_household_id`  | settlements  | household_id | Find settlements by household |
+| `idx_budgets_household_id`      | budgets            | household_id | Find budgets by household        |
+| `idx_budgets_category_id`       | budgets            | category_id  | Find budgets by category         |
+| `idx_settlements_household_id`  | settlements        | household_id | Find settlements by household    |
+| `idx_push_subscriptions_user_id`| push_subscriptions | user_id      | Find subscriptions by user       |
 
 **Without indexes:**
 
@@ -765,12 +836,13 @@ WHERE household_id = 'your-household-id';
 
 ## Schema Version
 
-- **Version:** 1.2.0
+- **Version:** 1.3.0
 - **Created:** November 26, 2025
-- **Last Updated:** December 13, 2025
+- **Last Updated:** December 14, 2025
 - **Supabase Project:** duo-financial-harmony
 
 **Changelog:**
+- v1.3.0: Added `push_subscriptions` table for Web Push notifications, added `notification_prefs` JSONB column to `users`
 - v1.2.0: Added `settlements` table for monthly settlement tracking, added `show_settlement` column to `households`
 - v1.1.0: Added `budgets` table for spending limits and alerts
 - v1.0.0: Initial schema with households, users, transactions, categories, goals, linked_accounts
