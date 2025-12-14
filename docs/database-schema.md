@@ -2,7 +2,7 @@
 
 ## Overview
 
-Duo uses a PostgreSQL database hosted on Supabase with 5 core tables to manage household finances. The schema implements Row Level Security (RLS) for data protection and uses triggers for automation.
+Duo uses a PostgreSQL database hosted on Supabase with 7 core tables to manage household finances. The schema implements Row Level Security (RLS) for data protection and uses triggers for automation.
 
 ## Architecture Principles
 
@@ -260,6 +260,12 @@ is_completed: FALSE
 │         user_id────►user.id
 │    household_id────►households.id
 └───────────────┘
+
+┌─────────────┐
+│   budgets   │
+│  household_id────►households.id
+│  category_id────►categories.id (optional)
+└─────────────┘
 ```
 
 **Cascade Rules:**
@@ -323,6 +329,78 @@ last_synced_at: 2025-12-01T10:30:00Z
 
 ---
 
+### 7. budgets
+
+Monthly spending limits for household budget management.
+
+| Column            | Type          | Constraints                           | Description                                    |
+| ----------------- | ------------- | ------------------------------------- | ---------------------------------------------- |
+| `id`              | UUID          | PRIMARY KEY                           | Unique budget ID                               |
+| `household_id`    | UUID          | NOT NULL, FK → households(id)         | Which household owns this budget               |
+| `category_id`     | UUID          | FK → categories(id), NULL for total   | Category for limit (NULL = total household)    |
+| `monthly_limit`   | DECIMAL(10,2) | NOT NULL                              | Maximum spending amount per month              |
+| `alert_threshold` | INTEGER       | DEFAULT 80, CHECK 0-100               | Percentage at which to trigger warning alerts  |
+| `created_at`      | TIMESTAMPTZ   | NOT NULL, DEFAULT NOW()               | When budget was created                        |
+| `updated_at`      | TIMESTAMPTZ   | NOT NULL, DEFAULT NOW()               | Last modification (auto-updated via trigger)   |
+
+**Unique Constraint:**
+
+- `(household_id, category_id)` - Each household can have one budget per category
+- NULL `category_id` represents the total household budget
+
+**Check Constraint:**
+
+```sql
+CHECK (alert_threshold >= 0 AND alert_threshold <= 100)
+```
+
+**Auto-Update Trigger:**
+
+The `updated_at` column is automatically updated via trigger when the row is modified.
+
+```sql
+CREATE TRIGGER update_budgets_updated_at
+  BEFORE UPDATE ON public.budgets
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+```
+
+**Example Data:**
+
+```
+-- Total household budget
+id: abc123...
+household_id: 550e8400...
+category_id: NULL          ← Total budget (no specific category)
+monthly_limit: 1000.00
+alert_threshold: 90        ← Alert at 90%
+
+-- Category-specific budget
+id: def456...
+household_id: 550e8400...
+category_id: xyz789...     ← Dining Out category
+monthly_limit: 200.00
+alert_threshold: 80        ← Default 80%
+```
+
+**RLS Policies:**
+
+| Operation | Policy                                     |
+| --------- | ------------------------------------------ |
+| SELECT    | Users can view their household's budgets   |
+| INSERT    | Users can create budgets for their household |
+| UPDATE    | Users can update their household's budgets |
+| DELETE    | Users can delete their household's budgets |
+
+**Indexes:**
+
+| Index                       | Column(s)    | Purpose                    |
+| --------------------------- | ------------ | -------------------------- |
+| `idx_budgets_household_id`  | household_id | Find budgets by household  |
+| `idx_budgets_category_id`   | category_id  | Find budgets by category   |
+
+---
+
 ## Row Level Security (RLS)
 
 All tables enforce RLS policies. Users can only access data from their household.
@@ -363,6 +441,7 @@ USING (
 | goals           | ✅ Household      | ✅ Household       | ✅ Household     | ✅ Household |
 | categories      | ✅ Global + own   | ✅ Authenticated   | ✅ Own           | ✅ Own       |
 | linked_accounts | ✅ Household      | ✅ Self            | ✅ Household     | ✅ Own only  |
+| budgets         | ✅ Household      | ✅ Household       | ✅ Household     | ✅ Household |
 
 ### Special Case: Household Creation (The "Chicken-and-Egg" Fix)
 
@@ -444,6 +523,8 @@ Indexes speed up common queries by 100x.
 | `idx_transactions_category_id`  | transactions | category_id  | Category breakdowns        |
 | `idx_goals_household_id`        | goals        | household_id | Fetch household goals      |
 | `idx_categories_household_id`   | categories   | household_id | Custom categories lookup   |
+| `idx_budgets_household_id`      | budgets      | household_id | Find budgets by household  |
+| `idx_budgets_category_id`       | budgets      | category_id  | Find budgets by category   |
 
 **Without indexes:**
 
@@ -611,9 +692,9 @@ WHERE household_id = 'your-household-id';
 
 ## Schema Version
 
-- **Version:** 1.0.0 (Hybrid Schema)
+- **Version:** 1.1.0
 - **Created:** November 26, 2025
-- **Last Updated:** November 26, 2025
+- **Last Updated:** December 13, 2025
 - **Supabase Project:** duo-financial-harmony
 
 ---
