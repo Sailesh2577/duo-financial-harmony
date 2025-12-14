@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { BudgetSettings } from "@/components/budget-settings";
+import { HouseholdSettings } from "@/components/household-settings";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -23,6 +24,13 @@ export default async function SettingsPage() {
   if (!userProfile?.household_id) {
     redirect("/onboarding");
   }
+
+  // Get household info
+  const { data: household } = await supabase
+    .from("households")
+    .select("name, show_settlement")
+    .eq("id", userProfile.household_id)
+    .single();
 
   // Get all categories (for dropdown)
   const { data: categories } = await supabase
@@ -62,13 +70,9 @@ export default async function SettingsPage() {
   // Calculate spending per category
   const spendingByCategory: Record<string, number> = {};
   let totalSpending = 0;
-  let jointSpending = 0;
 
   transactions?.forEach((txn) => {
     totalSpending += Number(txn.amount);
-    if (txn.is_joint) {
-      jointSpending += Number(txn.amount);
-    }
     if (txn.category_id) {
       spendingByCategory[txn.category_id] =
         (spendingByCategory[txn.category_id] || 0) + Number(txn.amount);
@@ -77,12 +81,15 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-8">
+      <HouseholdSettings
+        householdName={household?.name || "Your Household"}
+        showSettlement={household?.show_settlement ?? true}
+      />
       <BudgetSettings
         categories={categories || []}
         existingBudgets={budgets || []}
         spendingByCategory={spendingByCategory}
         totalSpending={totalSpending}
-        jointSpending={jointSpending}
       />
     </div>
   );

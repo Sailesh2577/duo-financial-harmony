@@ -2,7 +2,7 @@
 
 ## Overview
 
-Duo uses a PostgreSQL database hosted on Supabase with 7 core tables to manage household finances. The schema implements Row Level Security (RLS) for data protection and uses triggers for automation.
+Duo uses a PostgreSQL database hosted on Supabase with 8 core tables to manage household finances. The schema implements Row Level Security (RLS) for data protection and uses triggers for automation.
 
 ## Architecture Principles
 
@@ -21,14 +21,15 @@ Duo uses a PostgreSQL database hosted on Supabase with 7 core tables to manage h
 
 Represents a couple's shared financial space.
 
-| Column        | Type        | Constraints                       | Description                                    |
-| ------------- | ----------- | --------------------------------- | ---------------------------------------------- |
-| `id`          | UUID        | PRIMARY KEY                       | Unique household identifier                    |
-| `name`        | TEXT        | NOT NULL, DEFAULT 'Our Household' | Display name for the household                 |
-| `invite_code` | TEXT        | UNIQUE, NOT NULL                  | Auto-generated join code (e.g., "JOIN-5X9K2A") |
-| `created_by`  | UUID        | FK → users(id)                    | User who created the household                 |
-| `created_at`  | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()           | When household was created                     |
-| `updated_at`  | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()           | Last modification timestamp                    |
+| Column            | Type        | Constraints                       | Description                                    |
+| ----------------- | ----------- | --------------------------------- | ---------------------------------------------- |
+| `id`              | UUID        | PRIMARY KEY                       | Unique household identifier                    |
+| `name`            | TEXT        | NOT NULL, DEFAULT 'Our Household' | Display name for the household                 |
+| `invite_code`     | TEXT        | UNIQUE, NOT NULL                  | Auto-generated join code (e.g., "JOIN-5X9K2A") |
+| `created_by`      | UUID        | FK → users(id)                    | User who created the household                 |
+| `show_settlement` | BOOLEAN     | NOT NULL, DEFAULT TRUE            | Whether to show settlement feature             |
+| `created_at`      | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()           | When household was created                     |
+| `updated_at`      | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()           | Last modification timestamp                    |
 
 **Notes:**
 
@@ -401,6 +402,76 @@ alert_threshold: 80        ← Default 80%
 
 ---
 
+### 8. settlements
+
+Monthly settlement records for tracking who owes whom after joint expenses.
+
+| Column         | Type          | Constraints                         | Description                                      |
+| -------------- | ------------- | ----------------------------------- | ------------------------------------------------ |
+| `id`           | UUID          | PRIMARY KEY                         | Unique settlement ID                             |
+| `household_id` | UUID          | NOT NULL, FK → households(id)       | Which household this settlement belongs to       |
+| `month`        | DATE          | NOT NULL                            | First day of month (e.g., '2025-12-01')          |
+| `total_joint`  | DECIMAL(10,2) | NOT NULL                            | Total joint expenses for the month               |
+| `user_a_id`    | UUID          | NOT NULL, FK → users(id)            | First user in the settlement                     |
+| `user_a_paid`  | DECIMAL(10,2) | NOT NULL                            | How much user_a contributed to joint expenses    |
+| `user_b_id`    | UUID          | NOT NULL, FK → users(id)            | Second user in the settlement                    |
+| `user_b_paid`  | DECIMAL(10,2) | NOT NULL                            | How much user_b contributed to joint expenses    |
+| `settled_at`   | TIMESTAMPTZ   | NULL                                | When settled (NULL = pending, timestamp = done)  |
+| `settled_by`   | UUID          | FK → users(id)                      | Who marked it as settled                         |
+| `created_at`   | TIMESTAMPTZ   | NOT NULL, DEFAULT NOW()             | When record was created                          |
+
+**Unique Constraint:**
+
+- `(household_id, month)` - Each household can have one settlement per month
+
+**Settlement Logic:**
+
+```
+Example: December 2025
+- Joint Total: $1,200
+- User A (Sailesh) paid: $700
+- User B (Raven) paid: $500
+- Fair share each: $600
+
+Sailesh paid $100 MORE than fair share
+→ Raven owes Sailesh $100
+
+Balance calculation: user_paid - (total_joint / 2)
+- balance > 0 = other partner owes you
+- balance < 0 = you owe other partner
+```
+
+**Example Data:**
+
+```
+id: abc123...
+household_id: 550e8400...
+month: 2025-12-01
+total_joint: 1200.00
+user_a_id: 123e4567... (Sailesh)
+user_a_paid: 700.00
+user_b_id: 456e7890... (Raven)
+user_b_paid: 500.00
+settled_at: 2025-12-13T15:30:00Z
+settled_by: 123e4567... (Sailesh marked it settled)
+```
+
+**RLS Policies:**
+
+| Operation | Policy                                       |
+| --------- | -------------------------------------------- |
+| SELECT    | Users can view their household's settlements |
+| INSERT    | Users can create settlements for their household |
+| UPDATE    | Users can update their household's settlements |
+
+**Indexes:**
+
+| Index                          | Column(s)    | Purpose                      |
+| ------------------------------ | ------------ | ---------------------------- |
+| `idx_settlements_household_id` | household_id | Find settlements by household |
+
+---
+
 ## Row Level Security (RLS)
 
 All tables enforce RLS policies. Users can only access data from their household.
@@ -442,6 +513,7 @@ USING (
 | categories      | ✅ Global + own   | ✅ Authenticated   | ✅ Own           | ✅ Own       |
 | linked_accounts | ✅ Household      | ✅ Self            | ✅ Household     | ✅ Own only  |
 | budgets         | ✅ Household      | ✅ Household       | ✅ Household     | ✅ Household |
+| settlements     | ✅ Household      | ✅ Household       | ✅ Household     | ❌ N/A       |
 
 ### Special Case: Household Creation (The "Chicken-and-Egg" Fix)
 
@@ -525,6 +597,7 @@ Indexes speed up common queries by 100x.
 | `idx_categories_household_id`   | categories   | household_id | Custom categories lookup   |
 | `idx_budgets_household_id`      | budgets      | household_id | Find budgets by household  |
 | `idx_budgets_category_id`       | budgets      | category_id  | Find budgets by category   |
+| `idx_settlements_household_id`  | settlements  | household_id | Find settlements by household |
 
 **Without indexes:**
 
@@ -692,10 +765,15 @@ WHERE household_id = 'your-household-id';
 
 ## Schema Version
 
-- **Version:** 1.1.0
+- **Version:** 1.2.0
 - **Created:** November 26, 2025
 - **Last Updated:** December 13, 2025
 - **Supabase Project:** duo-financial-harmony
+
+**Changelog:**
+- v1.2.0: Added `settlements` table for monthly settlement tracking, added `show_settlement` column to `households`
+- v1.1.0: Added `budgets` table for spending limits and alerts
+- v1.0.0: Initial schema with households, users, transactions, categories, goals, linked_accounts
 
 ---
 

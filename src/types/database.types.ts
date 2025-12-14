@@ -173,6 +173,7 @@ export type Database = {
           id: string
           invite_code: string
           name: string
+          show_settlement: boolean
           updated_at: string
         }
         Insert: {
@@ -181,6 +182,7 @@ export type Database = {
           id?: string
           invite_code?: string
           name?: string
+          show_settlement?: boolean
           updated_at?: string
         }
         Update: {
@@ -189,6 +191,7 @@ export type Database = {
           id?: string
           invite_code?: string
           name?: string
+          show_settlement?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -261,6 +264,77 @@ export type Database = {
           {
             foreignKeyName: "linked_accounts_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settlements: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          month: string
+          settled_at: string | null
+          settled_by: string | null
+          total_joint: number
+          user_a_id: string
+          user_a_paid: number
+          user_b_id: string
+          user_b_paid: number
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          month: string
+          settled_at?: string | null
+          settled_by?: string | null
+          total_joint: number
+          user_a_id: string
+          user_a_paid: number
+          user_b_id: string
+          user_b_paid: number
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          month?: string
+          settled_at?: string | null
+          settled_by?: string | null
+          total_joint?: number
+          user_a_id?: string
+          user_a_paid?: number
+          user_b_id?: string
+          user_b_paid?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlements_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlements_settled_by_fkey"
+            columns: ["settled_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlements_user_a_id_fkey"
+            columns: ["user_a_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlements_user_b_id_fkey"
+            columns: ["user_b_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]

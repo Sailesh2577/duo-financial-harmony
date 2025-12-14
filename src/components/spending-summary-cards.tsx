@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Users } from "lucide-react";
+import { User, Users, Scale, ArrowRight } from "lucide-react";
 import { BudgetProgress } from "@/components/budget-progress";
 
 interface SpendingSummaryCardsProps {
@@ -11,6 +12,8 @@ interface SpendingSummaryCardsProps {
   // Budget data (optional)
   totalBudget?: { limit: number; threshold: number } | null;
   jointBudget?: { limit: number; threshold: number } | null;
+  // Settlement preview (optional)
+  settlementPreview?: { balance: number; partnerName: string } | null;
 }
 
 function formatCurrency(amount: number): string {
@@ -34,6 +37,7 @@ export function SpendingSummaryCards({
   hasPartner,
   totalBudget,
   jointBudget,
+  settlementPreview,
 }: SpendingSummaryCardsProps) {
   const monthName = getCurrentMonthName();
   const totalSpending = mySpending + partnerSpending + jointSpending;
@@ -131,6 +135,38 @@ export function SpendingSummaryCards({
             />
           </CardContent>
         </Card>
+      )}
+
+      {/* Settlement Preview Widget */}
+      {settlementPreview && Math.abs(settlementPreview.balance) >= 0.01 && (
+        <Link href="/settlement">
+          <Card className="bg-linear-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 transition-colors cursor-pointer">
+            <CardContent className="pt-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Scale className="h-5 w-5 text-indigo-600" />
+                  <span className="text-sm font-medium text-gray-700">
+                    {getCurrentMonthName()} Settlement
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {settlementPreview.balance > 0 ? (
+                    <span className="text-sm font-medium text-purple-600">
+                      {settlementPreview.partnerName} owes you{" "}
+                      {formatCurrency(settlementPreview.balance)}
+                    </span>
+                  ) : (
+                    <span className="text-sm font-medium text-orange-600">
+                      You owe {settlementPreview.partnerName}{" "}
+                      {formatCurrency(Math.abs(settlementPreview.balance))}
+                    </span>
+                  )}
+                  <ArrowRight className="h-4 w-4 text-gray-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       )}
     </div>
   );

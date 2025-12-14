@@ -10,7 +10,7 @@ import { AddTransactionButton } from "@/components/add-transaction-button";
 import { SpendingSummaryCards } from "@/components/spending-summary-cards";
 import { RealtimeProvider } from "@/components/realtime-provider";
 import { BudgetAlertProvider } from "@/components/budget-alert-provider";
-import { Settings } from "lucide-react";
+import { Settings, Scale } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -43,7 +43,7 @@ export default async function DashboardPage() {
   // Get household details
   const { data: household } = await supabase
     .from("households")
-    .select("name, invite_code")
+    .select("name, invite_code, show_settlement")
     .eq("id", profile.household_id)
     .single();
 
@@ -149,6 +149,25 @@ export default async function DashboardPage() {
   // For now, we don't have a "joint spending" budget type, so this is null
   const jointBudget = null;
 
+  // Check if current month is already settled
+  const currentMonthKey = startOfMonthStr;
+  const { data: currentMonthSettlement } = await supabase
+    .from("settlements")
+    .select("settled_at")
+    .eq("household_id", profile.household_id)
+    .eq("month", currentMonthKey)
+    .single();
+
+  const isCurrentMonthSettled = !!currentMonthSettlement?.settled_at;
+
+  // Calculate settlement preview for dashboard widget
+  const myJointContribution = (monthlyTransactions || [])
+    .filter((t) => t.is_joint && t.user_id === user.id)
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+  const fairShare = jointSpending / 2;
+  const settlementBalance = myJointContribution - fairShare;
+  // balance > 0 = partner owes me, balance < 0 = I owe partner
+
   // Get partner info
   const partner = members?.find((m) => m.id !== user.id);
   const partnerCount = (members?.length || 1) - 1;
@@ -193,6 +212,15 @@ export default async function DashboardPage() {
                 <span className="text-sm text-slate-400 cursor-not-allowed">
                   Goals
                 </span>
+{(household?.show_settlement ?? true) && (
+                  <Link
+                    href="/settlement"
+                    className="text-sm font-medium text-slate-600 hover:text-slate-900 pb-1 flex items-center gap-1"
+                  >
+                    <Scale className="h-4 w-4" />
+                    Settlement
+                  </Link>
+                )}
                 <Link
                   href="/settings"
                   className="text-sm font-medium text-slate-600 hover:text-slate-900 pb-1 flex items-center gap-1"
@@ -215,6 +243,20 @@ export default async function DashboardPage() {
               hasPartner={partnerCount > 0}
               totalBudget={totalBudget}
               jointBudget={jointBudget}
+              settlementPreview={
+                partnerCount > 0 &&
+                jointSpending > 0 &&
+                (household?.show_settlement ?? true) &&
+                !isCurrentMonthSettled
+                  ? {
+                      balance: settlementBalance,
+                      partnerName:
+                        partner?.full_name?.split(" ")[0] ||
+                        partner?.email?.split("@")[0] ||
+                        "Partner",
+                    }
+                  : null
+              }
             />
 
             {/* Invite Partner Card - Only show if no partner yet */}
