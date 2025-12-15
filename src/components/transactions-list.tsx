@@ -1,3 +1,11 @@
+/**
+ * @deprecated Consider using FilteredTransactionsList instead.
+ * This component is kept for potential use in simpler contexts
+ * where filtering is not needed (modals, export previews, etc.)
+ *
+ * If unused after Phase 4, safe to delete.
+ */
+
 import { Transaction, Category } from "@/types";
 import { TransactionRow } from "./transaction-row";
 

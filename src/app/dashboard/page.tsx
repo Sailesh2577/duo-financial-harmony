@@ -1,11 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import LogoutButton from "@/components/logout-button";
 import { PlaidLinkButton } from "@/components/plaid-link-button";
 import { LinkedAccountsList } from "@/components/linked-accounts-list";
 import { SyncTransactionsButton } from "@/components/sync-transactions-button";
-import { TransactionsList } from "@/components/transactions-list";
+import { FilteredTransactionsList } from "@/components/filtered-transactions-list";
 import { AddTransactionButton } from "@/components/add-transaction-button";
 import { SpendingSummaryCards } from "@/components/spending-summary-cards";
 import { RealtimeProvider } from "@/components/realtime-provider";
@@ -67,7 +68,7 @@ export default async function DashboardPage() {
     .eq("household_id", profile.household_id)
     .order("date", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(500); // ← CHANGED FROM 50 TO 500
 
   // Get categories for transaction display
   const { data: categories } = await supabase
@@ -114,7 +115,6 @@ export default async function DashboardPage() {
   });
 
   // Fetch budgets for the household
-  // Fetch budgets for the household
   const { data: rawBudgets } = await supabase
     .from("budgets")
     .select(
@@ -146,7 +146,6 @@ export default async function DashboardPage() {
     : null;
 
   // Joint budget is separate from total - only show if explicitly set
-  // For now, we don't have a "joint spending" budget type, so this is null
   const jointBudget = null;
 
   // Check if current month is already settled
@@ -166,7 +165,6 @@ export default async function DashboardPage() {
     .reduce((sum, t) => sum + Number(t.amount), 0);
   const fairShare = jointSpending / 2;
   const settlementBalance = myJointContribution - fairShare;
-  // balance > 0 = partner owes me, balance < 0 = I owe partner
 
   // Get partner info
   const partner = members?.find((m) => m.id !== user.id);
@@ -212,7 +210,7 @@ export default async function DashboardPage() {
                 <span className="text-sm text-slate-400 cursor-not-allowed">
                   Goals
                 </span>
-{(household?.show_settlement ?? true) && (
+                {(household?.show_settlement ?? true) && (
                   <Link
                     href="/settlement"
                     className="text-sm font-medium text-slate-600 hover:text-slate-900 pb-1 flex items-center gap-1"
@@ -346,23 +344,22 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Transactions Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Recent Transactions</CardTitle>
+                <CardTitle>Transactions</CardTitle>
                 <CardDescription>
-                  {transactions && transactions.length > 0
-                    ? `Showing ${transactions.length} recent transactions`
-                    : "Your spending will appear here"}
+                  Search and filter your spending history
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <TransactionsList
-                  transactions={transactions || []}
-                  categories={categories || []}
-                  currentUserId={user.id}
-                  householdMembers={members || []}
-                />
+                <Suspense fallback={<FiltersSkeleton />}>
+                  <FilteredTransactionsList
+                    transactions={transactions || []}
+                    categories={categories || []}
+                    currentUserId={user.id}
+                    householdMembers={members || []}
+                  />
+                </Suspense>
               </CardContent>
             </Card>
           </main>
@@ -372,5 +369,21 @@ export default async function DashboardPage() {
         </div>
       </BudgetAlertProvider>
     </RealtimeProvider>
+  );
+}
+
+// ↓↓↓ ADD THIS: Loading skeleton for filters ↓↓↓
+function FiltersSkeleton() {
+  return (
+    <div className="space-y-3 animate-pulse">
+      <div className="h-10 bg-slate-100 rounded-md" />
+      <div className="flex gap-2">
+        <div className="h-9 w-32 bg-slate-100 rounded-md" />
+        <div className="h-9 w-32 bg-slate-100 rounded-md" />
+        <div className="h-9 w-24 bg-slate-100 rounded-md" />
+        <div className="h-9 w-28 bg-slate-100 rounded-md" />
+      </div>
+      <div className="h-5 w-48 bg-slate-100 rounded-md" />
+    </div>
   );
 }
