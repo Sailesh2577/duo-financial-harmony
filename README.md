@@ -111,6 +111,15 @@ PLAID_ENV=
 GEMINI_API_KEY=
 ```
 
+## Techincal Notes
+
+### Timezone Handling
+
+All date operations use local timezone (not UTC). The `getLocalDateString()`
+helper ensures dates are formatted consistently as `YYYY-MM-DD` in the user's
+local timezone. Avoid using `toISOString().split("T")[0]` for user-facing dates
+as it returns UTC which may differ by a day.
+
 ## 🤝 Contributing
 
 **Feedback welcome!** Feel free to:

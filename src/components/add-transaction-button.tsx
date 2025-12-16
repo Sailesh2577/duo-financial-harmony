@@ -38,11 +38,20 @@ export function AddTransactionButton() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
 
+  // Helper to get today's date in local timezone as YYYY-MM-DD
+  const getLocalDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   // Form state
   const [amount, setAmount] = useState("");
   const [merchantName, setMerchantName] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(getLocalDateString);
   // 1. Added State for Joint/Personal toggle
   const [isJoint, setIsJoint] = useState(false);
 
@@ -69,7 +78,7 @@ export function AddTransactionButton() {
     setAmount("");
     setMerchantName("");
     setCategoryId("");
-    setDate(new Date().toISOString().split("T")[0]);
+    setDate(getLocalDateString());
     setIsJoint(false); // Reset toggle
   };
 

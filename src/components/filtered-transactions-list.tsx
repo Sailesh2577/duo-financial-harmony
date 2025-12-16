@@ -68,15 +68,27 @@ export function FilteredTransactionsList({
     return groups;
   }, {} as Record<string, Transaction[]>);
 
+  // Helper to get date string in local timezone (YYYY-MM-DD)
+  const getLocalDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString + "T00:00:00");
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    if (dateString === today.toISOString().split("T")[0]) {
+    // Use local date strings for comparison (not UTC)
+    const todayStr = getLocalDateString(today);
+    const yesterdayStr = getLocalDateString(yesterday);
+
+    if (dateString === todayStr) {
       return "Today";
-    } else if (dateString === yesterday.toISOString().split("T")[0]) {
+    } else if (dateString === yesterdayStr) {
       return "Yesterday";
     } else {
       return date.toLocaleDateString("en-US", {

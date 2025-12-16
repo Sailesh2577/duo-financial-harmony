@@ -2,57 +2,53 @@ import { Transaction } from "@/types";
 import { FilterState, DateRangePreset } from "@/types/filters";
 
 /**
- * Get date range bounds for a preset
+ * Get today's date as YYYY-MM-DD string in local timezone
+ */
+function getLocalDateString(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Get date range bounds for a preset as YYYY-MM-DD strings
+ * Using strings avoids timezone issues when comparing dates
  */
 export function getDateRangeBounds(preset: DateRangePreset): {
-  start: Date;
-  end: Date;
+  start: string;
+  end: string;
 } {
   const now = new Date();
-  const end = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    23,
-    59,
-    59,
-    999
-  );
+  const end = getLocalDateString(now);
 
   switch (preset) {
     case "this-month": {
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      return { start, end };
+      return { start: getLocalDateString(start), end };
     }
     case "last-month": {
       const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const monthEnd = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        0,
-        23,
-        59,
-        59,
-        999
-      );
-      return { start, end: monthEnd };
+      const monthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { start: getLocalDateString(start), end: getLocalDateString(monthEnd) };
     }
     case "last-3-months": {
       const start = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-      return { start, end };
+      return { start: getLocalDateString(start), end };
     }
     case "last-6-months": {
       const start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-      return { start, end };
+      return { start: getLocalDateString(start), end };
     }
     case "this-year": {
       const start = new Date(now.getFullYear(), 0, 1);
-      return { start, end };
+      return { start: getLocalDateString(start), end };
     }
     case "custom":
     default:
       // For custom, return full year as fallback (will be overridden by custom dates)
-      return { start: new Date(now.getFullYear(), 0, 1), end };
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+      return { start: getLocalDateString(yearStart), end };
   }
 }
 
@@ -101,16 +97,15 @@ export function filterTransactions(
       }
     }
 
-    // Date range filter
-    const txnDate = new Date(txn.date + "T00:00:00");
+    // Date range filter - use string comparison (YYYY-MM-DD format)
+    // This avoids timezone issues since transaction dates are stored as date-only strings
+    const txnDate = txn.date; // Already in YYYY-MM-DD format
     if (
       filters.dateRange === "custom" &&
       filters.startDate &&
       filters.endDate
     ) {
-      const start = new Date(filters.startDate + "T00:00:00");
-      const end = new Date(filters.endDate + "T23:59:59");
-      if (txnDate < start || txnDate > end) {
+      if (txnDate < filters.startDate || txnDate > filters.endDate) {
         return false;
       }
     } else if (filters.dateRange !== "custom") {
