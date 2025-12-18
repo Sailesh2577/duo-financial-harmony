@@ -34,7 +34,9 @@ const getCategoryStyle = (categoryName: string) => {
 // Convert hex color to Tailwind-compatible bg/text classes
 const getCustomCategoryStyle = (color: string | null) => {
   // Map hex colors to approximate Tailwind classes
+  // Includes both custom category colors (Tailwind) and system category colors (Material Design)
   const colorMap: Record<string, { bg: string; text: string }> = {
+    // Custom category colors (Tailwind palette)
     "#8B5CF6": { bg: "bg-violet-100", text: "text-violet-700" },
     "#3B82F6": { bg: "bg-blue-100", text: "text-blue-700" },
     "#10B981": { bg: "bg-emerald-100", text: "text-emerald-700" },
@@ -47,6 +49,17 @@ const getCustomCategoryStyle = (color: string | null) => {
     "#F97316": { bg: "bg-orange-100", text: "text-orange-700" },
     "#06B6D4": { bg: "bg-cyan-100", text: "text-cyan-700" },
     "#A855F7": { bg: "bg-purple-100", text: "text-purple-700" },
+    // System category colors (Material Design palette from database)
+    "#4CAF50": { bg: "bg-green-100", text: "text-green-700" },    // Groceries
+    "#FF5722": { bg: "bg-orange-100", text: "text-orange-700" },  // Dining Out
+    "#2196F3": { bg: "bg-blue-100", text: "text-blue-700" },      // Transportation
+    "#9C27B0": { bg: "bg-purple-100", text: "text-purple-700" },  // Shopping
+    "#FFC107": { bg: "bg-yellow-100", text: "text-yellow-700" },  // Bills & Utilities
+    "#E91E63": { bg: "bg-pink-100", text: "text-pink-700" },      // Entertainment
+    "#00BCD4": { bg: "bg-cyan-100", text: "text-cyan-700" },      // Healthcare
+    "#FF9800": { bg: "bg-amber-100", text: "text-amber-700" },    // Travel
+    "#8BC34A": { bg: "bg-lime-100", text: "text-lime-700" },      // Personal Care
+    "#607D8B": { bg: "bg-slate-100", text: "text-slate-700" },    // Other
   };
 
   return colorMap[color || ""] || { bg: "bg-violet-100", text: "text-violet-700" };
