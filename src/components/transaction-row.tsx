@@ -12,27 +12,63 @@ interface TransactionRowProps {
   ownerName: string;
 }
 
-// Category color mapping
+// Category color mapping for system categories (fallback styles)
 const getCategoryStyle = (categoryName: string) => {
-  const styles: Record<string, { bg: string; text: string; emoji: string }> = {
-    groceries: { bg: "bg-green-100", text: "text-green-700", emoji: "🛒" },
-    "dining out": { bg: "bg-orange-100", text: "text-orange-700", emoji: "🍽️" },
-    transportation: { bg: "bg-blue-100", text: "text-blue-700", emoji: "🚗" },
-    shopping: { bg: "bg-purple-100", text: "text-purple-700", emoji: "🛍️" },
-    "bills & utilities": {
-      bg: "bg-yellow-100",
-      text: "text-yellow-700",
-      emoji: "💡",
-    },
-    entertainment: { bg: "bg-pink-100", text: "text-pink-700", emoji: "🎬" },
-    healthcare: { bg: "bg-cyan-100", text: "text-cyan-700", emoji: "⚕️" },
-    travel: { bg: "bg-amber-100", text: "text-amber-700", emoji: "✈️" },
-    "personal care": { bg: "bg-lime-100", text: "text-lime-700", emoji: "💇" },
-    other: { bg: "bg-slate-100", text: "text-slate-700", emoji: "📦" },
-    uncategorized: { bg: "bg-gray-100", text: "text-gray-500", emoji: "❓" },
+  const styles: Record<string, { bg: string; text: string }> = {
+    groceries: { bg: "bg-green-100", text: "text-green-700" },
+    "dining out": { bg: "bg-orange-100", text: "text-orange-700" },
+    transportation: { bg: "bg-blue-100", text: "text-blue-700" },
+    shopping: { bg: "bg-purple-100", text: "text-purple-700" },
+    "bills & utilities": { bg: "bg-yellow-100", text: "text-yellow-700" },
+    entertainment: { bg: "bg-pink-100", text: "text-pink-700" },
+    healthcare: { bg: "bg-cyan-100", text: "text-cyan-700" },
+    travel: { bg: "bg-amber-100", text: "text-amber-700" },
+    "personal care": { bg: "bg-lime-100", text: "text-lime-700" },
+    other: { bg: "bg-slate-100", text: "text-slate-700" },
+    uncategorized: { bg: "bg-gray-100", text: "text-gray-500" },
   };
 
   return styles[categoryName.toLowerCase()] || styles.uncategorized;
+};
+
+// Convert hex color to Tailwind-compatible bg/text classes
+const getCustomCategoryStyle = (color: string | null) => {
+  // Map hex colors to approximate Tailwind classes
+  const colorMap: Record<string, { bg: string; text: string }> = {
+    "#8B5CF6": { bg: "bg-violet-100", text: "text-violet-700" },
+    "#3B82F6": { bg: "bg-blue-100", text: "text-blue-700" },
+    "#10B981": { bg: "bg-emerald-100", text: "text-emerald-700" },
+    "#F59E0B": { bg: "bg-amber-100", text: "text-amber-700" },
+    "#EF4444": { bg: "bg-red-100", text: "text-red-700" },
+    "#EC4899": { bg: "bg-pink-100", text: "text-pink-700" },
+    "#6366F1": { bg: "bg-indigo-100", text: "text-indigo-700" },
+    "#14B8A6": { bg: "bg-teal-100", text: "text-teal-700" },
+    "#84CC16": { bg: "bg-lime-100", text: "text-lime-700" },
+    "#F97316": { bg: "bg-orange-100", text: "text-orange-700" },
+    "#06B6D4": { bg: "bg-cyan-100", text: "text-cyan-700" },
+    "#A855F7": { bg: "bg-purple-100", text: "text-purple-700" },
+  };
+
+  return colorMap[color || ""] || { bg: "bg-violet-100", text: "text-violet-700" };
+};
+
+// Get default icon for system categories
+const getDefaultIcon = (categoryName: string) => {
+  const icons: Record<string, string> = {
+    groceries: "🛒",
+    "dining out": "🍽️",
+    transportation: "🚗",
+    shopping: "🛍️",
+    "bills & utilities": "💡",
+    entertainment: "🎬",
+    healthcare: "⚕️",
+    travel: "✈️",
+    "personal care": "💇",
+    other: "📦",
+    uncategorized: "❓",
+  };
+
+  return icons[categoryName.toLowerCase()] || "❓";
 };
 
 const formatAmount = (amount: number) => {
@@ -55,7 +91,14 @@ export function TransactionRow({ transaction, category, ownerName }: Transaction
   }, [transaction.is_joint]);
 
   const categoryName = category?.name || "Uncategorized";
-  const categoryStyle = getCategoryStyle(category?.name || "uncategorized");
+
+  // Use custom category style if category has a color, otherwise fall back to name-based style
+  const categoryStyle = category?.color
+    ? getCustomCategoryStyle(category.color)
+    : getCategoryStyle(category?.name || "uncategorized");
+
+  // Use the icon from the database, or fall back to a default based on category name
+  const categoryIcon = category?.icon || getDefaultIcon(category?.name || "uncategorized");
 
   const handleToggleJoint = async () => {
     const previousValue = isJoint;
@@ -109,7 +152,7 @@ export function TransactionRow({ transaction, category, ownerName }: Transaction
         <div
           className={`w-10 h-10 rounded-full flex items-center justify-center ${categoryStyle.bg}`}
         >
-          <span className="text-lg">{categoryStyle.emoji}</span>
+          <span className="text-lg">{categoryIcon}</span>
         </div>
         <div>
           <p className="font-medium text-slate-900">
