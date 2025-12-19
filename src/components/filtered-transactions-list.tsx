@@ -4,6 +4,7 @@ import { useState, useCallback, Suspense } from "react";
 import { Transaction, Category } from "@/types";
 import { TransactionFilters } from "./transaction-filters";
 import { TransactionRow } from "./transaction-row";
+import { ExportButton } from "./export-button";
 
 interface HouseholdMember {
   id: string;
@@ -109,6 +110,11 @@ export function FilteredTransactionsList({
           onFilteredTransactionsChange={handleFilteredTransactionsChange}
         />
       </Suspense>
+
+      {/* Export Button */}
+      <div className="flex justify-end">
+        <ExportButton />
+      </div>
 
       {/* Transaction List */}
       {filteredTransactions.length === 0 ? (
