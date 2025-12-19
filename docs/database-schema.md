@@ -127,14 +127,23 @@ Spending classification buckets (system defaults + custom).
 | Personal Care | 💇 | #8BC34A | TRUE | NULL |
 | Other | 📦 | #607D8B | TRUE | NULL |
 
-**V2.0 Custom Categories:**
-Users will be able to create household-specific categories:
+**Custom Categories (Implemented in Issue #31):**
+Users can create household-specific categories:
 
 ```
 name: "Baby Expenses"
 household_id: 550e8400-e29b-41d4-a716-446655440000
 is_default: FALSE
+icon: "👶"
+color: "#EC4899"
 ```
+
+**API Endpoints:**
+- `POST /api/categories` - Create custom category
+- `PUT /api/categories/[id]` - Update custom category
+- `DELETE /api/categories/[id]` - Delete custom category (with optional transaction reassignment)
+
+**UI:** `/settings/categories` page with emoji picker and color palette
 
 ---
 
