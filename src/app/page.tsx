@@ -17,15 +17,19 @@ export default async function Home({
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Hero Section */}
-      <section className="relative flex-1 flex flex-col items-center justify-center px-4 py-16 text-center overflow-hidden bg-gradient-to-br from-violet-50 via-slate-50 to-blue-50">
+      <section className="relative flex-1 flex flex-col items-center justify-center px-4 py-16 text-center overflow-hidden bg-linear-to-br from-violet-50 via-slate-50 to-blue-50">
         {/* Decorative blurred blobs */}
         <div className="absolute top-20 left-10 w-72 h-72 bg-violet-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob" />
         <div className="absolute top-40 right-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000" />
         <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-4000" />
 
         {/* Content */}
-        <h1 className="relative z-10 text-5xl font-bold text-slate-900 mb-2">Duo</h1>
-        <p className="relative z-10 text-xl text-slate-600 mb-4">Financial Harmony for Couples</p>
+        <h1 className="relative z-10 text-5xl font-bold text-slate-900 mb-2">
+          Duo
+        </h1>
+        <p className="relative z-10 text-xl text-slate-600 mb-4">
+          Financial Harmony for Couples
+        </p>
         <p className="relative z-10 text-lg text-slate-500 max-w-md mb-8">
           Managing money with your partner, made simple and stress-free.
         </p>
@@ -48,7 +52,9 @@ export default async function Home({
               <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                 <User className="h-7 w-7 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-lg text-slate-900 mb-2">Track Personal</h3>
+              <h3 className="font-semibold text-lg text-slate-900 mb-2">
+                Track Personal
+              </h3>
               <p className="text-slate-500">Your spending stays yours</p>
             </div>
 
@@ -57,7 +63,9 @@ export default async function Home({
               <div className="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                 <Users className="h-7 w-7 text-purple-600" />
               </div>
-              <h3 className="font-semibold text-lg text-slate-900 mb-2">Share Joint</h3>
+              <h3 className="font-semibold text-lg text-slate-900 mb-2">
+                Share Joint
+              </h3>
               <p className="text-slate-500">Mark shared expenses with a tap</p>
             </div>
 
@@ -66,20 +74,29 @@ export default async function Home({
               <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                 <BarChart3 className="h-7 w-7 text-emerald-600" />
               </div>
-              <h3 className="font-semibold text-lg text-slate-900 mb-2">Settle Monthly</h3>
-              <p className="text-slate-500">See who owes whom at month&apos;s end</p>
+              <h3 className="font-semibold text-lg text-slate-900 mb-2">
+                Settle Monthly
+              </h3>
+              <p className="text-slate-500">
+                See who owes whom at month&apos;s end
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Final CTA Section */}
-      <section className="relative px-4 py-20 text-center overflow-hidden bg-gradient-to-tl from-violet-50 via-slate-50 to-emerald-50">
+      <section className="relative px-4 py-20 text-center overflow-hidden bg-linear-to-tl from-violet-50 via-slate-50 to-emerald-50">
         {/* Decorative blob */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-violet-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob" />
 
-        <p className="relative z-10 text-2xl font-medium text-slate-700 mb-6">Ready to get started?</p>
-        <Button asChild className="relative z-10 bg-violet-600 hover:bg-violet-700 px-8 shadow-lg hover:shadow-xl transition-shadow">
+        <p className="relative z-10 text-2xl font-medium text-slate-700 mb-6">
+          Ready to get started?
+        </p>
+        <Button
+          asChild
+          className="relative z-10 bg-violet-600 hover:bg-violet-700 px-8 shadow-lg hover:shadow-xl transition-shadow"
+        >
           <Link href="/signup">Get Started</Link>
         </Button>
       </section>
