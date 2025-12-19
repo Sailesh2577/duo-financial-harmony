@@ -11,6 +11,7 @@ import { AddTransactionButton } from "@/components/add-transaction-button";
 import { SpendingSummaryCards } from "@/components/spending-summary-cards";
 import { RealtimeProvider } from "@/components/realtime-provider";
 import { BudgetAlertProvider } from "@/components/budget-alert-provider";
+import { OnboardingProvider } from "@/components/onboarding/onboarding-provider";
 import { Settings, Scale } from "lucide-react";
 import {
   Card,
@@ -36,6 +37,15 @@ export default async function DashboardPage() {
     .select("full_name, household_id")
     .eq("id", user.id)
     .single();
+
+  // Check onboarding status separately (column may not exist yet)
+  const { data: onboardingData } = await supabase
+    .from("users")
+    .select("onboarding_completed_at")
+    .eq("id", user.id)
+    .single();
+
+  const showOnboarding = !onboardingData?.onboarding_completed_at;
 
   if (!profile?.household_id) {
     redirect("/onboarding");
@@ -169,6 +179,7 @@ export default async function DashboardPage() {
   // Get partner info
   const partner = members?.find((m) => m.id !== user.id);
   const partnerCount = (members?.length || 1) - 1;
+  const hasPartner = partnerCount > 0;
   const hasLinkedAccounts = linkedAccounts && linkedAccounts.length > 0;
 
   return (
@@ -178,7 +189,11 @@ export default async function DashboardPage() {
         spendingByCategory={spendingByCategory}
         totalSpending={totalSpending}
       >
-        <div className="min-h-screen bg-slate-50">
+        <OnboardingProvider
+          showOnboarding={showOnboarding}
+          hasPartner={hasPartner}
+        >
+          <div className="min-h-screen bg-slate-50">
           {/* Header with Navigation */}
           <header className="bg-white border-b border-slate-200">
             <div className="max-w-4xl mx-auto px-6 py-4">
@@ -222,6 +237,7 @@ export default async function DashboardPage() {
                 <Link
                   href="/settings"
                   className="text-sm font-medium text-slate-600 hover:text-slate-900 pb-1 flex items-center gap-1"
+                  data-onboarding="settings"
                 >
                   <Settings className="h-4 w-4" />
                   Settings
@@ -233,7 +249,8 @@ export default async function DashboardPage() {
           {/* Main Content */}
           <main className="max-w-4xl mx-auto p-6 space-y-6">
             {/* Spending Summary Cards */}
-            <SpendingSummaryCards
+            <div data-onboarding="summary-cards">
+              <SpendingSummaryCards
               mySpending={mySpending}
               partnerSpending={partnerSpending}
               jointSpending={jointSpending}
@@ -256,10 +273,11 @@ export default async function DashboardPage() {
                   : null
               }
             />
+            </div>
 
             {/* Invite Partner Card - Only show if no partner yet */}
             {partnerCount === 0 && (
-              <Card className="border-blue-200 bg-blue-50">
+              <Card className="border-blue-200 bg-blue-50" data-onboarding="invite-partner">
                 <CardHeader>
                   <CardTitle className="text-blue-900">
                     📨 Invite Your Partner
@@ -344,7 +362,7 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card data-onboarding="transactions">
               <CardHeader>
                 <CardTitle>Transactions</CardTitle>
                 <CardDescription>
@@ -367,6 +385,7 @@ export default async function DashboardPage() {
           {/* Floating Action Button for Adding Transactions */}
           <AddTransactionButton />
         </div>
+        </OnboardingProvider>
       </BudgetAlertProvider>
     </RealtimeProvider>
   );

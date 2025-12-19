@@ -4,13 +4,15 @@ import Link from "next/link";
 import { BudgetSettings } from "@/components/budget-settings";
 import { HouseholdSettings } from "@/components/household-settings";
 import { NotificationSettings } from "@/components/notification-settings";
+import { RestartOnboardingButton } from "@/components/onboarding/restart-onboarding-button";
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tag, ChevronRight } from "lucide-react";
+import { Tag, ChevronRight, HelpCircle } from "lucide-react";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -140,6 +142,22 @@ export default async function SettingsPage() {
         spendingByCategory={spendingByCategory}
         totalSpending={totalSpending}
       />
+
+      {/* App Tour */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <HelpCircle className="h-5 w-5" />
+            <CardTitle>App Tour</CardTitle>
+          </div>
+          <CardDescription>
+            Replay the welcome walkthrough to learn about Duo&apos;s features.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RestartOnboardingButton />
+        </CardContent>
+      </Card>
     </div>
   );
 }

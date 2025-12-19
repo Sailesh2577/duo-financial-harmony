@@ -52,16 +52,17 @@ created_by: 123e4567-e89b-12d3-a456-426614174000
 
 Extends Supabase's `auth.users` with profile data.
 
-| Column         | Type        | Constraints                      | Description                      |
-| -------------- | ----------- | -------------------------------- | -------------------------------- |
-| `id`           | UUID        | PRIMARY KEY, FK → auth.users(id) | Matches Supabase auth ID         |
-| `email`        | TEXT        | NOT NULL                         | User's email address             |
-| `full_name`    | TEXT        | NULL                             | Display name                     |
-| `avatar_url`   | TEXT        | NULL                             | Profile picture URL (future use) |
-| `household_id`       | UUID        | FK → households(id)              | Links to household               |
-| `notification_prefs` | JSONB       | DEFAULT (see below)              | Push notification preferences    |
-| `created_at`         | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()          | Account creation                 |
-| `updated_at`         | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()          | Last profile update              |
+| Column                    | Type        | Constraints                      | Description                          |
+| ------------------------- | ----------- | -------------------------------- | ------------------------------------ |
+| `id`                      | UUID        | PRIMARY KEY, FK → auth.users(id) | Matches Supabase auth ID             |
+| `email`                   | TEXT        | NOT NULL                         | User's email address                 |
+| `full_name`               | TEXT        | NULL                             | Display name                         |
+| `avatar_url`              | TEXT        | NULL                             | Profile picture URL (future use)     |
+| `household_id`            | UUID        | FK → households(id)              | Links to household                   |
+| `notification_prefs`      | JSONB       | DEFAULT (see below)              | Push notification preferences        |
+| `onboarding_completed_at` | TIMESTAMPTZ | NULL                             | When user completed app tour (NULL = not completed) |
+| `created_at`              | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()          | Account creation                     |
+| `updated_at`              | TIMESTAMPTZ | NOT NULL, DEFAULT NOW()          | Last profile update                  |
 
 **Notification Preferences Default:**
 
@@ -845,12 +846,13 @@ WHERE household_id = 'your-household-id';
 
 ## Schema Version
 
-- **Version:** 1.3.0
+- **Version:** 1.4.0
 - **Created:** November 26, 2025
-- **Last Updated:** December 14, 2025
+- **Last Updated:** December 19, 2025
 - **Supabase Project:** duo-financial-harmony
 
 **Changelog:**
+- v1.4.0: Added `onboarding_completed_at` column to `users` table for tracking app tour completion
 - v1.3.0: Added `push_subscriptions` table for Web Push notifications, added `notification_prefs` JSONB column to `users`
 - v1.2.0: Added `settlements` table for monthly settlement tracking, added `show_settlement` column to `households`
 - v1.1.0: Added `budgets` table for spending limits and alerts

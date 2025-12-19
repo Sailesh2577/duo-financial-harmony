@@ -464,6 +464,7 @@ export type Database = {
           household_id: string | null
           id: string
           notification_prefs: Json | null
+          onboarding_completed_at: string | null
           updated_at: string
         }
         Insert: {
@@ -474,6 +475,7 @@ export type Database = {
           household_id?: string | null
           id: string
           notification_prefs?: Json | null
+          onboarding_completed_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -484,6 +486,7 @@ export type Database = {
           household_id?: string | null
           id?: string
           notification_prefs?: Json | null
+          onboarding_completed_at?: string | null
           updated_at?: string
         }
         Relationships: [
